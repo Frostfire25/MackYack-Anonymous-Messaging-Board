@@ -3,42 +3,10 @@
 
 ### Configuration
 ---
-# TODO
-
-
 ## Mack Yack Protocol
 
 ### Messages 
 ---
-
-1. ClientJoin
-```
-Client -> Server Message
-Sent whenever a Client wants to enter the Message room.
-
-Properties:
-    - String - srcAddress
-    - int - srcPort
-```
-
-2. ClientWelcome
-```
-Server -> Client Message
-Sent from the server to client proceeding a ClientJoin Message.
-
-Properties:
-    - boolean - accepted
-    - String - uid
-```
-
-
-3. ClientLeave
-4. ServerPoll
-5. ServerPollResponse
-6. MessageSend
-7. MessageReceive
-
-
 
 ## Onion Routing Protocol
 
@@ -49,7 +17,7 @@ Properties:
 1. Create
 ```
 Client -> First OR
-Sent from client to the first onion router to create a circuit.
+Sent from Client to the first onion router to create a circuit.
 
 Properties:
     - int - circID
@@ -69,7 +37,7 @@ Properties:
 3. Destroy
 ```
 Client -> First OR
-Sent from client to the first onion router to break down the established circuit (recursively).
+Sent from Client to the first onion router to break down the established circuit (recursively).
 
 Properties:
     - int - circID
@@ -78,7 +46,7 @@ Properties:
 4. Relay Extend
 ```
 Client -> Last OR in Circuit
-Sent from client to the first OR in the circuit but forwarded to the last OR in the circuit to extend the circuit by another node.
+Sent from Client to the first OR in the circuit but forwarded to the last OR in the circuit to extend the circuit by another node.
 
 Properties:
     - int - circID
@@ -86,16 +54,34 @@ Properties:
     - int - port; Port of the OR to add to the circuit
 ```
 
-5. Relay Data
+5. Put
 ```
 Client -> Server
-Sent from client through the circuit to the Server containing the REST API request.
+Sent from Client through the circuit to the Server containing a message. This message will be appended to the board.
 
 Properties:
-    - int - circID
-    - String - data; Base 64-encoded data
+    - String - data
 ```
 
+6. Get Request
+```
+Client -> Server
+Sent from the Client through the circuit to the Server asking to receive information regarding the board at the current instant.
+
+Properties: (none)
+```
+
+7. Get Response
+```
+Client -> Server
+Sent from the Server through the circuit to the Client responding with all of the Messages on the Board.
+
+Properties:
+    - List<Message> - messages
+        - Where a message is constructed as
+            - String - data
+            - String - timestamp
+```
 
 ## Configs
 
