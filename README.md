@@ -8,6 +8,35 @@
 ### Messages 
 ---
 
+1. Put
+```
+Client -> Server
+Sent from Client through the circuit to the Server containing a message. This message will be appended to the board.
+
+Properties:
+    - String - data
+```
+
+2. Get Request
+```
+Client -> Server
+Sent from the Client through the circuit to the Server asking to receive information regarding the board at the current instant.
+
+Properties: (none)
+```
+
+3. Get Response
+```
+Client -> Server
+Sent from the Server through the circuit to the Client responding with all of the Messages on the Board.
+
+Properties:
+    - List<Message> - messages
+        - Where a message is constructed as
+            - String - data
+            - String - timestamp
+```
+
 ## Onion Routing Protocol
 
 
@@ -52,35 +81,6 @@ Properties:
     - int - circID
     - String - addr; Address of the OR to add to the circuit
     - int - port; Port of the OR to add to the circuit
-```
-
-5. Put
-```
-Client -> Server
-Sent from Client through the circuit to the Server containing a message. This message will be appended to the board.
-
-Properties:
-    - String - data
-```
-
-6. Get Request
-```
-Client -> Server
-Sent from the Client through the circuit to the Server asking to receive information regarding the board at the current instant.
-
-Properties: (none)
-```
-
-7. Get Response
-```
-Client -> Server
-Sent from the Server through the circuit to the Client responding with all of the Messages on the Board.
-
-Properties:
-    - List<Message> - messages
-        - Where a message is constructed as
-            - String - data
-            - String - timestamp
 ```
 
 ## Configs
