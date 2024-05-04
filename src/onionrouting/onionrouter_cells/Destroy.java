@@ -1,4 +1,4 @@
-package cells;
+package onionrouter_cells;
 
 import java.io.InvalidObjectException;
 
@@ -8,19 +8,19 @@ import merrimackutil.json.types.JSONType;
 
 /**
  * Client -> First OR
- * Sent from Client to the first onion router to create a circuit.
+ * Sent from Client to the first onion router to break down the established
+ * circuit (recursively).
  */
-public class Create implements JSONSerializable {
+public class Destroy implements JSONSerializable {
 
     private int circID;
-    private String gX; // Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
 
     /**
-     * Construct a Create cell from the corresponding JSON object.
+     * Construct a Destroy cell from the corresponding JSON object.
      * 
-     * @param obj a JSON object representing a Create cell.
+     * @param obj a JSON object representing a Destroy cell.
      */
-    public Create(JSONObject obj) throws InvalidObjectException {
+    public Destroy(JSONObject obj) throws InvalidObjectException {
         deserialize(obj);
     }
 
@@ -37,16 +37,11 @@ public class Create implements JSONSerializable {
             message = (JSONObject) obj;
 
             if (!message.containsKey("circID"))
-                throw new InvalidObjectException("Create needs a circID.");
+                throw new InvalidObjectException("Destroy needs a circID.");
             else
                 circID = message.getInt("circID");
 
-            if (!message.containsKey("gX"))
-                throw new InvalidObjectException("Create needs a gX.");
-            else
-                gX = message.getString("gX");
-
-            if (message.size() > 2)
+            if (message.size() > 1)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -71,16 +66,11 @@ public class Create implements JSONSerializable {
         JSONObject obj = new JSONObject();
 
         obj.put("circID", circID);
-        obj.put("gX", gX);
 
         return obj;
     }
 
     public int getCircID() {
         return circID;
-    }
-
-    public String getgX() {
-        return gX;
     }
 }

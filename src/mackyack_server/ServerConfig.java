@@ -1,3 +1,4 @@
+package mackyack_server;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InvalidObjectException;
@@ -11,7 +12,7 @@ import merrimackutil.json.types.JSONType;
  * 
  * @author Brandon
  */
-public class Config implements JSONSerializable {
+public class ServerConfig implements JSONSerializable {
 
     private String path;
 
@@ -19,7 +20,7 @@ public class Config implements JSONSerializable {
     private int sinkholePort;
     private String blockFile;
 
-    public Config(String path) throws FileNotFoundException, InvalidObjectException {
+    public ServerConfig(String path) throws FileNotFoundException, InvalidObjectException {
         this.path = path;
 
         // Construct file

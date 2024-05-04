@@ -1,4 +1,4 @@
-package cells;
+package mackyack_messages;
 
 import merrimackutil.json.types.JSONObject;
 import merrimackutil.json.types.JSONType;

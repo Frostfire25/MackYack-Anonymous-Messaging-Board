@@ -1,4 +1,4 @@
-package cells;
+package onionrouter_cells;
 
 import java.io.InvalidObjectException;
 
@@ -7,20 +7,21 @@ import merrimackutil.json.types.JSONObject;
 import merrimackutil.json.types.JSONType;
 
 /**
- * Client -> First OR
- * Sent from Client to the first onion router to break down the established
- * circuit (recursively).
+ * First OR -> Client
+ * Sent from the first onion router to the client confirming the creation of a
+ * circuit.
  */
-public class Destroy implements JSONSerializable {
+public class Created implements JSONSerializable {
 
-    private int circID;
+    private String gY; // Base 64-encoded second half of Diffie-Hellman KEX.
+    private String kHash; // Base 64-encoded SHA-3 256 hash: H(K || "handshake")
 
     /**
-     * Construct a Destroy cell from the corresponding JSON object.
+     * Construct a Created cell from the corresponding JSON object.
      * 
-     * @param obj a JSON object representing a Destroy cell.
+     * @param obj a JSON object representing a Created cell.
      */
-    public Destroy(JSONObject obj) throws InvalidObjectException {
+    public Created(JSONObject obj) throws InvalidObjectException {
         deserialize(obj);
     }
 
@@ -36,12 +37,17 @@ public class Destroy implements JSONSerializable {
         if (obj instanceof JSONObject) {
             message = (JSONObject) obj;
 
-            if (!message.containsKey("circID"))
-                throw new InvalidObjectException("Destroy needs a circID.");
+            if (!message.containsKey("gY"))
+                throw new InvalidObjectException("Created needs a gY.");
             else
-                circID = message.getInt("circID");
+                gY = message.getString("gY");
 
-            if (message.size() > 1)
+            if (!message.containsKey("kHash"))
+                throw new InvalidObjectException("Created needs a kHash.");
+            else
+                kHash = message.getString("kHash");
+
+            if (message.size() > 2)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -65,12 +71,17 @@ public class Destroy implements JSONSerializable {
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
 
-        obj.put("circID", circID);
+        obj.put("gY", gY);
+        obj.put("kHash", kHash);
 
         return obj;
     }
 
-    public int getCircID() {
-        return circID;
+    public String getgY() {
+        return gY;
+    }
+
+    public String getkHash() {
+        return kHash;
     }
 }

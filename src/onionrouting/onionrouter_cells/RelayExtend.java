@@ -1,4 +1,4 @@
-package cells;
+package onionrouter_cells;
 
 import java.io.InvalidObjectException;
 

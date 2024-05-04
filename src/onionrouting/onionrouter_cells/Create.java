@@ -1,4 +1,4 @@
-package cells;
+package onionrouter_cells;
 
 import java.io.InvalidObjectException;
 
@@ -7,21 +7,20 @@ import merrimackutil.json.types.JSONObject;
 import merrimackutil.json.types.JSONType;
 
 /**
- * First OR -> Client
- * Sent from the first onion router to the client confirming the creation of a
- * circuit.
+ * Client -> First OR
+ * Sent from Client to the first onion router to create a circuit.
  */
-public class Created implements JSONSerializable {
+public class Create implements JSONSerializable {
 
-    private String gY; // Base 64-encoded second half of Diffie-Hellman KEX.
-    private String kHash; // Base 64-encoded SHA-3 256 hash: H(K || "handshake")
+    private int circID;
+    private String gX; // Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
 
     /**
-     * Construct a Created cell from the corresponding JSON object.
+     * Construct a Create cell from the corresponding JSON object.
      * 
-     * @param obj a JSON object representing a Created cell.
+     * @param obj a JSON object representing a Create cell.
      */
-    public Created(JSONObject obj) throws InvalidObjectException {
+    public Create(JSONObject obj) throws InvalidObjectException {
         deserialize(obj);
     }
 
@@ -37,15 +36,15 @@ public class Created implements JSONSerializable {
         if (obj instanceof JSONObject) {
             message = (JSONObject) obj;
 
-            if (!message.containsKey("gY"))
-                throw new InvalidObjectException("Created needs a gY.");
+            if (!message.containsKey("circID"))
+                throw new InvalidObjectException("Create needs a circID.");
             else
-                gY = message.getString("gY");
+                circID = message.getInt("circID");
 
-            if (!message.containsKey("kHash"))
-                throw new InvalidObjectException("Created needs a kHash.");
+            if (!message.containsKey("gX"))
+                throw new InvalidObjectException("Create needs a gX.");
             else
-                kHash = message.getString("kHash");
+                gX = message.getString("gX");
 
             if (message.size() > 2)
                 throw new InvalidObjectException("Superflous fields");
@@ -71,17 +70,17 @@ public class Created implements JSONSerializable {
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
 
-        obj.put("gY", gY);
-        obj.put("kHash", kHash);
+        obj.put("circID", circID);
+        obj.put("gX", gX);
 
         return obj;
     }
 
-    public String getgY() {
-        return gY;
+    public int getCircID() {
+        return circID;
     }
 
-    public String getkHash() {
-        return kHash;
+    public String getgX() {
+        return gX;
     }
 }

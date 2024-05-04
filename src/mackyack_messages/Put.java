@@ -1,4 +1,4 @@
-package cells;
+package mackyack_messages;
 
 import java.io.InvalidObjectException;
 
