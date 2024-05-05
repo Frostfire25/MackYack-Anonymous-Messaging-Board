@@ -23,7 +23,7 @@ public class CreatedCell implements JSONSerializable {
      * @param gY Base 64-encoded second half of Diffie-Hellman KEX.
      * @param kHash Base 64-encoded SHA-3 256 hash: H(K || "handshake").
      */
-    public CreatedCell(String gY, String kHash) throws InvalidObjectException {
+    public CreatedCell(String gY, String kHash) {
         this.gY = gY;
         this.kHash = kHash;
     }

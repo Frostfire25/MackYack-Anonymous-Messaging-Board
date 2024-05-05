@@ -148,7 +148,7 @@ public class OnionRouterService implements Runnable {
             InvalidKeyException, InvalidKeySpecException{
         // 1. Get gX from the cell. Then convert it to a Public Key for DH magic.
         // Decrypt gX so it can be used.
-        String gX = decryptGX(cell.getgX());
+        String gX = "";//decryptGX(cell.getgX());
         // Load the public value from the other side.
         X509EncodedKeySpec spec = new X509EncodedKeySpec(
             Base64.getDecoder().decode(gX));
@@ -169,7 +169,7 @@ public class OnionRouterService implements Runnable {
         byte[] sharedSecret = ecdhKex.generateSecret();
 
         // 3. Send back CreatedCell(gY, H(K || "handshake"))
-        MessageDigest md = new MessageDigest("SHA-3-256");
+        //MessageDigest md = new MessageDigest("SHA-3-256");
         String kHash = "";
         CreatedCell retCell = new CreatedCell(gY, kHash);
 
