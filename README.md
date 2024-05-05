@@ -1,9 +1,18 @@
-# MackYack
-## Anonymous Messaging Service using Onion Routing Protocol 
+# MackYack: Anonymous Messaging Service using Onion Routing 
 
-### Configuration
+## MackYack Protocol
+
+### Client Functionality
 ---
-## Mack Yack Protocol
+- Message is sent to the server, where it is added to the MackYack board.
+- Requests to the server are made periodically (every 3 seconds) to update the client's local view of the MackYack board.
+- Anonymity is maintained by sending requests through an Onion Routing overlay network
+    - Onion Routing overlay network is accessed via. an Onion Proxy. More details in "Onion Routing Protocol" section.
+
+### Server Functionality
+---
+- Message is received by some unknown client, and its message is appended to the board along with a timestamp (the time it was received).
+- Upon receiving a request for the board from a client, a snapshot of the board is sent back to the requesting client.
 
 ### Messages 
 ---
@@ -39,6 +48,16 @@ Properties:
 
 ## Onion Routing Protocol
 
+### Onion Proxy Functionality
+---
+- Used by MackYack clients to access the Onion Routing overlay network.
+    - The Onion Proxy (OP) is run on the client's local computer when the MackYack application starts.
+- Constructs the circuit (i.e. sends create + extend cells) by choosing from the Client's list of known routers (located in routers.json).
+- Ability to deconstruct the circuit by sending a destroy cell and its associated circID to the entry Onion Router (OR).
+- Encrypts MackYack messages in "layers" (like an onion! Get it?).
+    - Encryption is done by encrypting the message with the key established with each OR in the circuit starting with the farthest node and ending with the closest.
+- Decrypts MackYack responses by peeling back "layers".
+    - Decryption is done by decrypting the message with the key establish with each OR in the circuit starting with the closest node and ending with the farthest.
 
 ### Cells (Messages)
 ---
@@ -50,7 +69,8 @@ Sent from Client to the first onion router to create a circuit.
 
 Properties:
     - int - circID
-    - String - gX; Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public key.
+    - String - gX; Base 64-encoded first half of Diffie-Hellman KEX encrypted in the ephemeral key (see next property).
+    - String - encryptedSymKey; Ephemeral key (symmetric) encrypted using the OR's public key.
 ```
 
 2. Created
@@ -72,7 +92,7 @@ Properties:
     - int - circID
 ```
 
-4. Relay Extend
+4. Extend
 ```
 Client -> Last OR in Circuit
 Sent from Client to the first OR in the circuit but forwarded to the last OR in the circuit to extend the circuit by another node.
@@ -81,6 +101,42 @@ Properties:
     - int - circID
     - String - addr; Address of the OR to add to the circuit
     - int - port; Port of the OR to add to the circuit
+    - String - gX; Base 64-encoded first half of Diffie-Hellman KEX encrypted in the ephemeral key (see next property).
+    - String - encryptedSymKey; Ephemeral key (symmetric) encrypted using the OR's public key.
+```
+
+5. Extended
+```
+New OR's predecessor -> Client
+Sent from the newly-created OR's predecessor to the Client acknowledging the extension and sending the second half of the DH KEX.
+
+Properties:
+    - String - gY; Base 64-encoded second half of Diffie-Hellman KEX.
+    - String - kHash; Base 64-encoded SHA-3 256 hash: H(K || "handshake")
+```
+
+6. Data
+```
+Client -> Last OR in Circuit -> Server
+Sent from the client to the last OR in the circuit (which is then passed to the server). Contains the data
+that will be sent out to the server.
+
+Properties:
+    - String - addr; Address of the OR to add to the circuit
+    - int - port; Port of the OR to add to the circuit
+    - String - data; Data to be sent over to the server (JSON marshalled; encrypted in Server's public key)
+```
+
+7. Relay
+```
+Client -> OR; OR -> OR
+Sent client/OR to an OR in the circuit. Its function is for the receiving OR to relay the data to the
+next OR in the chain without interpreting the data.
+
+Properties:
+    - int - circID
+    - String - relayData; Data that is being relayed. Encrypted in onion layers to be peeled one-at-a-time
+                          at the destination OR w/ the symmetric key identified by the circID
 ```
 
 ## Configs
@@ -113,8 +169,7 @@ Example:
 ```
 {
     port: 5010,
-    privKey: NUHIDYAWHGDOIW12ih3ih3oa,
-    routersPath: "example-configs/routers.json"
+    privKey: NUHIDYAWHGDOIW12ih3ih3oa
 }
 ```
 
@@ -124,6 +179,7 @@ Contains configuration information for the client to initialize with.  \
 Example:
 ```
 {
+    "port": 5000,
     serverAddr: "127.0.0.1",
     serverPort: 5010,
     serverPubKey: NUHIDYAWHGDOIW12ih3ih3oa,
