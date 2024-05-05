@@ -17,7 +17,7 @@ public class ExtendCell implements JSONSerializable {
     private int circID;
     private String addr; // Address of the OR to add to the circuit
     private int port; // Port of the OR to add to the circuit
-    private String gX; // TODO
+    private String gX; // Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
 
     /**
      * Construct a RelayExtend cell from the corresponding JSON object.
@@ -51,7 +51,7 @@ public class ExtendCell implements JSONSerializable {
                 circID = message.getInt("circID");
 
             if (!message.containsKey("addr"))
-                throw new InvalidObjectException("RelayExtend needs a addr.");
+                throw new InvalidObjectException("RelayExtend needs an addr.");
             else
                 addr = message.getString("addr");
 
@@ -60,7 +60,12 @@ public class ExtendCell implements JSONSerializable {
             else
                 port = message.getInt("port");
 
-            if (message.size() > 4)
+            if(!message.containsKey("gX"))
+                throw new InvalidObjectException("RelayExtend needs gX.");
+            else
+                gX = message.getString("gX");
+
+            if (message.size() > 5)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -88,6 +93,7 @@ public class ExtendCell implements JSONSerializable {
         obj.put("circID", circID);
         obj.put("addr", addr);
         obj.put("port", port);
+        obj.put("gX", gX);
 
         return obj;
     }
@@ -107,4 +113,9 @@ public class ExtendCell implements JSONSerializable {
     public int getPort() {
         return port;
     }
+
+    public String getgX() {
+        return gX;
+    }
+
 }

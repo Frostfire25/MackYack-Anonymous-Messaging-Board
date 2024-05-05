@@ -38,7 +38,7 @@ public class ExtendedCell implements JSONSerializable {
             message = (JSONObject) obj;
 
             if (!message.containsKey("type"))
-                throw new InvalidObjectException("Create needs a type.");
+                throw new InvalidObjectException("Extended needs a type.");
             else if(!message.getString("type").equals(type))
                 throw new InvalidObjectException("Type is incorrectly specified for Extended cell.");
 

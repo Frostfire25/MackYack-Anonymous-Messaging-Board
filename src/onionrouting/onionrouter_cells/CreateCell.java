@@ -17,6 +17,17 @@ public class CreateCell implements JSONSerializable {
     private String gX; // Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
 
     /**
+     * Default constructor to initialize an outgoing CreateCell object.
+     * 
+     * @param gX Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
+     * @param circID circuit ID
+     */
+    public CreateCell(String gX, int circID) {
+        this.gX = gX;
+        this.circID = circID;
+    }
+    
+    /**
      * Construct a Create cell from the corresponding JSON object.
      * 
      * @param obj a JSON object representing a Create cell.

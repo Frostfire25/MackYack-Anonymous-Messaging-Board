@@ -12,17 +12,26 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Base64;
 
+import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.Key;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.security.Security;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Base64Encoder;
 
 /**
  * Class for the threaded service implementation of the OR (to allow for multiple connections through this OR).
@@ -47,6 +56,8 @@ public class OnionRouterService implements Runnable {
         this.keyTable = keyTable;
         this.fwdTable = fwdTable;
         this.privKey = privKey;
+        // Initialize the BCProvider
+        Security.addProvider(new BouncyCastleProvider());
     }
 
     @Override
@@ -58,7 +69,7 @@ public class OnionRouterService implements Runnable {
         PrintWriter outSockOut = null;
         try {
             inSockIn = new Scanner(inSock.getInputStream());
-            inSockOut = new PrintWriter(inSock.getOutputStream());
+            inSockOut = new PrintWriter(inSock.getOutputStream(), true);
         }
         catch(IOException ex) {
             System.err.println(ex);
@@ -125,34 +136,53 @@ public class OnionRouterService implements Runnable {
 
     /**
      * Performs all the operations to be done on a Relay cell when received.
+     * 
+     * Steps:
+     *  1. Decrypt
+     *  2. Pass it along
+     * 
      * @param cell cell we're performing the operation on.
      */
     private void doRelay(RelayCell cell) {
         // TODO: RELAY
 
         /*
-         * Steps:
-         *  1. Decrypt
-         *  2. Pass it along
-         * 
-         *  Notes: Relay basically means "encrypted" for our implementation,
-         *         and thus do not interpret -- just relay the message along.
+         * Notes: Relay basically means "encrypted" for our implementation,
+         *        and thus do not interpret -- just relay the message along.
          */
     }
 
+
+
     /**
      * Performs all the operations to be done on a Create cell when received.
+     * 
+     * Steps:
+     *  1. Get gX from the cell.
+     *  2. Get the shared secret + create K
+     *  3. Send back a CreatedCell(gY, H(K || "handshake"))
+     *      a. Note: No encryption on this part. None needed b/c gY is not enough to make K vulnerable
+     *  4. Store circID + K in keyTable
+     * 
      * @param cell cell we're performing the operation on.
      */
     private void doCreate(CreateCell cell, PrintWriter output) throws NoSuchAlgorithmException,
             InvalidKeyException, InvalidKeySpecException{
         // 1. Get gX from the cell. Then convert it to a Public Key for DH magic.
         // Decrypt gX so it can be used.
-        String gX = "";//decryptGX(cell.getgX());
+        byte[] gX = decryptgX(cell.getgX());
+
+        // If gX is null, that means we encountered an error. Send back a CreatedCell with all empty fields and return.
+        if(gX == null) {
+            CreatedCell retCell = new CreatedCell("", "");
+            output.println(retCell.serialize());
+            return;
+        }
+
         // Load the public value from the other side.
-        X509EncodedKeySpec spec = new X509EncodedKeySpec(
-            Base64.getDecoder().decode(gX));
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(gX);
         PublicKey gXPubKey = KeyFactory.getInstance("EC").generatePublic(spec);
+
 
         // 2. Diffie-Hellman stuff
         KeyAgreement ecdhKex = KeyAgreement.getInstance("ECDH"); // Eliptic Curve Diffie-Hellman
@@ -168,25 +198,25 @@ public class OnionRouterService implements Runnable {
         ecdhKex.doPhase(gXPubKey, true);
         byte[] sharedSecret = ecdhKex.generateSecret();
 
+
         // 3. Send back CreatedCell(gY, H(K || "handshake"))
-        //MessageDigest md = new MessageDigest("SHA-3-256");
-        String kHash = "";
-        CreatedCell retCell = new CreatedCell(gY, kHash);
-
-
-        output.println();
         
-        /*
-         * Steps:
-         *  1. Get gX from the cell.
-         *  2. Get the shared secret + create K
-         *  3. Send back a CreatedCell(gY, H(K || "handshake"))
-         *      a. Note: No encryption on this part. None needed b/c gY is not enough to make K vulnerable
-         *  4. Store circID + K in keyTable
-         * 
-         *  Notes: Sending BACK a cell is simple. inSockOut.println(CreatedCell);
-         */
+        // Get the hash
+        MessageDigest md = MessageDigest.getInstance("SHA-3-256");
+        md.update(sharedSecret);
+        md.update("handshake".getBytes());
+        String kHash = Base64.getEncoder().encodeToString(md.digest());
+        
+        // Package in CreatedCell and return it back.
+        CreatedCell retCell = new CreatedCell(gY, kHash);
+        output.println(retCell.serialize());
+        
+
+        // 4. Store circID + key K in table
+        keyTable.put(cell.getCircID(), new SecretKeySpec(sharedSecret, "AES"));
     }
+
+
 
     /**
      * Performs all the operations to be done on a Created cell when received.
@@ -204,6 +234,8 @@ public class OnionRouterService implements Runnable {
          *         Additionally, sending BACK a cell is simple. inSockOut.println(ExtendedCell);
          */
     }
+
+
 
     /**
      * Performs all the operations to be done on a Destroy cell when received.
@@ -237,6 +269,8 @@ public class OnionRouterService implements Runnable {
          */
     }
 
+
+
     /**
      * Performs all the operations to be done on an Extended cell when received.
      * @param cell cell we're performing the operation on.
@@ -249,6 +283,38 @@ public class OnionRouterService implements Runnable {
          *  1. Encrypt in sym key for Alice
          *  2. Send Relay() message back towards Alice
          */
+    }
+
+
+
+    /*
+        Helper methods
+    */
+
+
+    /**
+     * Decrypts gX that's encoded in this OR's pubKey.
+     * 
+     * @param encryptedgX gX that's encrypted in this OR's pubKey.
+     * @return gX plain text byte data.
+     * @throws NoSuchPaddingException 
+     * @throws NoSuchAlgorithmException 
+     * @throws InvalidKeyException 
+     */
+    private byte[] decryptgX(String encryptedgX) {
+        try {
+            // Convert to byte data
+            byte[] ciphertext = Base64.getDecoder().decode(encryptedgX);
+
+            // Initialize the cipher + decrypt
+            Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, privKey);
+            return cipher.doFinal(ciphertext);
+        } catch (Exception e) {
+            System.err.println("Error decrypting gX from CreateCell.");
+            System.err.println(e);
+            return null;
+        }
     }
     
 }
