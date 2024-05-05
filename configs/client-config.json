@@ -1,0 +1,6 @@
+{
+    "serverAddr": "127.0.0.1",
+    "serverPort": 5010,
+    "serverPubKey": "",
+    "routersPath": "./configs/routers.json"
+}

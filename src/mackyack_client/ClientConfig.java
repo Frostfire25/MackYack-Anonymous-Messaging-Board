@@ -16,9 +16,10 @@ public class ClientConfig implements JSONSerializable {
 
     private String path;
 
-    private String dnsAddress;
-    private int sinkholePort;
-    private String blockFile;
+    private String serverAddr;
+    private int serverPort;
+    private String serverPubKey;
+    private String routersPath;
 
     public ClientConfig(String path) throws FileNotFoundException, InvalidObjectException {
         this.path = path;
@@ -50,46 +51,59 @@ public class ClientConfig implements JSONSerializable {
             throw new InvalidObjectException("Expected Config Type - JsonObject. ");
         }
 
-        if (obj.containsKey("dns-address")) {
-            this.dnsAddress = obj.getString("dns-address");
+        if (obj.containsKey("serverAddr")) {
+            this.serverAddr = obj.getString("serverAddr");
         } else {
-            throw new InvalidObjectException("Expected a Config object -- dns-address expected.");
+            throw new InvalidObjectException("Expected a Config object -- serverAddr expected.");
         }
 
-        if (obj.containsKey("sinkhole-port")) {
-            this.sinkholePort = obj.getInt("sinkhole-port");
+        if (obj.containsKey("serverPort")) {
+            this.serverPort = obj.getInt("serverPort");
         } else {
-            throw new InvalidObjectException("Expected a Config object -- sinkhole-port expected.");
+            throw new InvalidObjectException("Expected a Config object -- serverPort expected.");
         }
         
-        if (obj.containsKey("block-file")) {
-            this.blockFile = obj.getString("block-file");
+        if (obj.containsKey("serverPubKey")) {
+            this.serverPubKey = obj.getString("serverPubKey");
         } else {
-            throw new InvalidObjectException("Expected a Config object -- block-file expected.");
+            throw new InvalidObjectException("Expected a Config object -- serverPubKey expected.");
         }
 
+        if (obj.containsKey("routersPath")) {
+            this.routersPath = obj.getString("routersPath");
+        } else {
+            throw new InvalidObjectException("Expected a Config object -- routersPath expected.");
+        }
     }
 
     @Override
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
-        obj.put("dns-address", this.dnsAddress);
-        obj.put("sinkhole-port", this.sinkholePort);
-        obj.put("block-file", this.blockFile);
+        obj.put("serverAddr", this.serverAddr);
+        obj.put("serverPort", this.serverPort);
+        obj.put("serverPubKey", this.serverPubKey);
+        obj.put("routersPath", this.routersPath);
         return obj; // We are never reading this file to JSON.
     }
 
-    public String getDnsAddress() {
-        return dnsAddress;
+    /**
+     * Accessors
+     */
+
+    public String getServerAddr() {
+        return serverAddr;
     }
 
-    public int getSinkholePort() {
-        return sinkholePort;
+    public int getServerPort() {
+        return serverPort;
     }
 
-    public String getBlockFile() {
-        return blockFile;
+    public String getServerPubKey() {
+        return serverPubKey;
     }
 
+    public String getRoutersPath() {
+        return routersPath;
+    }
     
 }

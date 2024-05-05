@@ -13,9 +13,9 @@ import merrimackutil.util.Tuple;
  */
 public class App
 {
-    public static boolean doHelp = false;               // True if help option present.
-    private static ClientConfig conf = null;                  // The configuration information.
-    private static String configFile = "config.json";   // Default configuration file.
+    public static boolean doHelp = false;                       // True if help option present.
+    private static ClientConfig conf = null;                    // The configuration information.
+    private static String configFile = "client-config.json";    // Default configuration file.
     
 
     /**
@@ -23,8 +23,8 @@ public class App
      */
     public static void usage() {
         System.out.println("usage:");
-        System.out.println("  dhtnode --config <config>");
-        System.out.println("  dhtnode --help");
+        System.out.println("  mackyack_client --config <config>");
+        System.out.println("  mackyack_client --help");
         System.out.println("options:");
         System.out.println("  -c, --config\t\tConfig file to use.");
         System.out.println("  -h, --help\t\tDisplay the help.");
