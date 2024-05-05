@@ -134,6 +134,8 @@ public class OnionRouterService implements Runnable {
          *  3. Send back a CreatedCell(gY, H(K || "handshake"))
          *      a. Note: No encryption on this part. None needed b/c gY is not enough to make K vulnerable
          *  4. Store circID + K in keyTable
+         * 
+         *  Notes: Sending BACK a cell is simple. inSockOut.println(CreatedCell);
          */
     }
 
@@ -149,7 +151,8 @@ public class OnionRouterService implements Runnable {
          *  1. Encapsulate in an ExtendedCell
          *  2. Send back the ExtendedCell
          * 
-         *  Notes: CREATE and CREATED are sent + received by the last OR before the extension occurs
+         *  Notes: CREATE and CREATED are sent + received by the last OR before the extension occurs.
+         *         Additionally, sending BACK a cell is simple. inSockOut.println(ExtendedCell);
          */
     }
 
