@@ -151,12 +151,12 @@ Example:
         {
             addr: "127.0.0.1",
             port: 5000,
-            pubKey: JIASDOH~!3`1ho2ioHSDIAOD -- Base 64 encoding
+            pubKey: "<node-pub-key>"
         },
         {
             addr: "127.0.0.1",
             port: 5003,
-            pubKey: NUHIDYAWHGDOIW12ih3ih3oa -- Base 64 encoding
+            pubKey: "<node-pub-key>"
         }
     ]
 }
@@ -169,7 +169,7 @@ Example:
 ```
 {
     port: 5010,
-    privKey: NUHIDYAWHGDOIW12ih3ih3oa
+    privKey: "<private-key>"
 }
 ```
 
@@ -182,7 +182,7 @@ Example:
     "port": 5000,
     serverAddr: "127.0.0.1",
     serverPort: 5010,
-    serverPubKey: NUHIDYAWHGDOIW12ih3ih3oa,
+    serverPubKey: "<server-pub-key>",
     routersPath: "example-configs/routers.json"
 }
 ```
@@ -193,6 +193,6 @@ Example:
 ```
 {
     port: 5000,
-    privKey: NUHIDYAWHGDOIW12ih3ih3oa
+    privKey: "<private-key>"
 }
 ```
