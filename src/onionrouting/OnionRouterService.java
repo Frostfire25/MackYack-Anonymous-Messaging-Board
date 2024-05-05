@@ -6,8 +6,12 @@ import onionrouting.onionrouter_cells.*;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Scanner;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.InvalidObjectException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Base64;
@@ -54,6 +58,7 @@ public class OnionRouterService implements Runnable {
      */
     public OnionRouterService(ConcurrentHashMap<Integer, Key> keyTable, ConcurrentHashMap<String, Integer> fwdTable, Socket inSock, PrivateKey privKey) {
         this.inSock = inSock;
+        this.outSock = null;
         this.keyTable = keyTable;
         this.fwdTable = fwdTable;
         this.privKey = privKey;
@@ -63,24 +68,16 @@ public class OnionRouterService implements Runnable {
 
     @Override
     public void run() {
-        // Initialize the I/O
-        Scanner inSockIn = null;
-        PrintWriter inSockOut = null;
-        Scanner outSockIn = null;
-        PrintWriter outSockOut = null;
         try {
-            inSockIn = new Scanner(inSock.getInputStream());
-            inSockOut = new PrintWriter(inSock.getOutputStream(), true);
-        }
-        catch(IOException ex) {
-            System.err.println(ex);
-        }
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inSock.getInputStream()));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(inSock.getOutputStream()));
 
         // Run while the connection is alive in this circuit:
         while(true) {
 
             // Read the type of the incoming cell
-            JSONObject obj = JsonIO.readObject(inSockIn.nextLine());
+            JSONObject obj = JsonIO.readObject(reader.readLine());
             if(!obj.containsKey("type"))
             {
                 System.err.println("Could not determine the type of the cell. Cell will be dropped");
@@ -100,7 +97,7 @@ public class OnionRouterService implements Runnable {
                         CreateCell createCell = new CreateCell(obj);
 
                         try {
-                            doCreate(createCell, inSockOut);
+                            doCreate(createCell, writer);
                         } catch(Exception e) {
                             System.err.println("Could not complete DH KEX with Alice properly.");
                             System.err.println(e);
@@ -132,6 +129,9 @@ public class OnionRouterService implements Runnable {
                 System.err.println(ex.getMessage());
             }
         }
+        } catch(IOException e) {
+            e.printStackTrace();
+    }
     }
 
 
@@ -166,9 +166,10 @@ public class OnionRouterService implements Runnable {
      *  4. Store circID + K in keyTable
      * 
      * @param cell cell we're performing the operation on.
+     * @throws IOException 
      */
-    private void doCreate(CreateCell cell, PrintWriter output) throws NoSuchAlgorithmException,
-            InvalidKeyException, InvalidKeySpecException{
+    private void doCreate(CreateCell cell, BufferedWriter output) throws NoSuchAlgorithmException,
+            InvalidKeyException, InvalidKeySpecException, IOException{
         // 1. Get gX from the cell. Then convert it to a Public Key for DH magic.
         // Decrypt gX so it can be used.
         byte[] gX = decryptHybrid(cell.getEncryptedSymKey(), cell.getgX());
@@ -176,7 +177,9 @@ public class OnionRouterService implements Runnable {
         // If gX is null, that means we encountered an error. Send back a CreatedCell with all empty fields and return.
         if(gX == null) {
             CreatedCell retCell = new CreatedCell("", "");
-            output.println(retCell.serialize());
+            output.write(retCell.serialize());
+            output.newLine();
+            output.flush();
             return;
         }
 
@@ -203,7 +206,7 @@ public class OnionRouterService implements Runnable {
         // 3. Send back CreatedCell(gY, H(K || "handshake"))
         
         // Get the hash
-        MessageDigest md = MessageDigest.getInstance("SHA-3-256");
+        MessageDigest md = MessageDigest.getInstance("SHA3-256");
         md.update(sharedSecret);
         md.update("handshake".getBytes());
         String kHash = Base64.getEncoder().encodeToString(md.digest());
@@ -213,7 +216,9 @@ public class OnionRouterService implements Runnable {
 
         // Package in CreatedCell and return it back.
         CreatedCell retCell = new CreatedCell(gY, kHash);
-        output.println(retCell.serialize());
+        output.write(retCell.serialize());
+        output.newLine();
+        output.flush();
     }
 
 
@@ -325,7 +330,7 @@ public class OnionRouterService implements Runnable {
      * @param cyphertext
      * @return
      */
-    public byte[] decryptHybrid(String encrypted_sym_key, final String cyphertext) {
+    public byte[] decryptHybrid(final String encrypted_sym_key, final String cyphertext) {
         try {
             // Decrypt the Symmetric Key
             // Initialize the cipher + decrypt

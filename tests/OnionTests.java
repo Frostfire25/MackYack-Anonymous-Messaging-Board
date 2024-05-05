@@ -44,7 +44,6 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 public class OnionTests {
     
