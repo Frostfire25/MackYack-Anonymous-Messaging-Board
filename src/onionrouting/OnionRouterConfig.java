@@ -2,27 +2,23 @@ package onionrouting;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InvalidObjectException;
+import java.net.InetAddress;
 import merrimackutil.json.JSONSerializable;
 import merrimackutil.json.JsonIO;
 import merrimackutil.json.types.JSONObject;
 import merrimackutil.json.types.JSONType;
 
 /**
- * Config for the sinkhole app.
+ * Config for the onion routers.
  * 
- * @author Brandon
+ * @author Brandon Cash, Derek Costello
  */
 public class OnionRouterConfig implements JSONSerializable {
 
-    private String path;
-
-    private String dnsAddress;
-    private int sinkholePort;
-    private String blockFile;
+    private String privateKey;
+    private int port;
 
     public OnionRouterConfig(String path) throws FileNotFoundException, InvalidObjectException {
-        this.path = path;
-
         // Construct file
         File file = new File(path);
 
@@ -38,7 +34,7 @@ public class OnionRouterConfig implements JSONSerializable {
 
     @Override
     public String serialize() {
-        return toJSONType().getFormattedJSON();
+        return toJSONType().toJSON();
     }
 
     @Override
@@ -50,46 +46,33 @@ public class OnionRouterConfig implements JSONSerializable {
             throw new InvalidObjectException("Expected Config Type - JsonObject. ");
         }
 
-        if (obj.containsKey("dns-address")) {
-            this.dnsAddress = obj.getString("dns-address");
+        if (obj.containsKey("privKey")) {
+            this.privateKey = obj.getString("privKey");
         } else {
-            throw new InvalidObjectException("Expected a Config object -- dns-address expected.");
+            throw new InvalidObjectException("Expected a Config object -- privKey expected.");
         }
 
-        if (obj.containsKey("sinkhole-port")) {
-            this.sinkholePort = obj.getInt("sinkhole-port");
+        if (obj.containsKey("port")) {
+            this.port = obj.getInt("port");
         } else {
-            throw new InvalidObjectException("Expected a Config object -- sinkhole-port expected.");
+            throw new InvalidObjectException("Expected a Config object -- port expected.");
         }
-        
-        if (obj.containsKey("block-file")) {
-            this.blockFile = obj.getString("block-file");
-        } else {
-            throw new InvalidObjectException("Expected a Config object -- block-file expected.");
-        }
-
     }
 
     @Override
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
-        obj.put("dns-address", this.dnsAddress);
-        obj.put("sinkhole-port", this.sinkholePort);
-        obj.put("block-file", this.blockFile);
+        obj.put("privKey", this.privateKey);
+        obj.put("port", this.port);
         return obj; // We are never reading this file to JSON.
     }
 
-    public String getDnsAddress() {
-        return dnsAddress;
+    public String getPrivateKey() {
+        return privateKey;
     }
 
-    public int getSinkholePort() {
-        return sinkholePort;
+    public int getPort() {
+        return port;
     }
 
-    public String getBlockFile() {
-        return blockFile;
-    }
-
-    
 }
