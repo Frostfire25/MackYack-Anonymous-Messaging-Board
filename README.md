@@ -94,7 +94,7 @@ Example:
     routers: [
         {
             addr: "127.0.0.1",
-            port: 5000,
+            port: 5002,
             pubKey: JIASDOH~!3`1ho2ioHSDIAOD -- Base 64 encoding
         },
         {
@@ -124,6 +124,7 @@ Contains configuration information for the client to initialize with.  \
 Example:
 ```
 {
+    port: 5000
     serverAddr: "127.0.0.1",
     serverPort: 5010,
     serverPubKey: NUHIDYAWHGDOIW12ih3ih3oa,
