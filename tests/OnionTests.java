@@ -157,7 +157,7 @@ public class OnionTests {
             byte[] sharedSecret = ecdhKex.generateSecret();
 
             // 4. Get the kHash for ourselves, and assert.
-            MessageDigest md = MessageDigest.getInstance("SHA-3-256");
+            MessageDigest md = MessageDigest.getInstance("SHA3-256");
             md.update(sharedSecret);
             md.update("handshake".getBytes());
             String kHash = Base64.getEncoder().encodeToString(md.digest());
