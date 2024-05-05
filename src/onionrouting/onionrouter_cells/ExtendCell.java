@@ -17,6 +17,7 @@ public class ExtendCell implements JSONSerializable {
     private int circID;
     private String addr; // Address of the OR to add to the circuit
     private int port; // Port of the OR to add to the circuit
+    private String gX; // TODO
 
     /**
      * Construct a RelayExtend cell from the corresponding JSON object.

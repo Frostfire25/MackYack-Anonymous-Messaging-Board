@@ -3,6 +3,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.security.Key;
 
 import merrimackutil.cli.LongOption;
 import merrimackutil.cli.OptionParser;
@@ -22,7 +23,7 @@ public class OnionRouter
     private static String configFile = "config.json";   // Default configuration file.
     
     // OR-specific fields:
-    private static ConcurrentHashMap<Integer, String> keyTable;      // Used for looking up symmetric keys associated with circuit IDs.
+    private static ConcurrentHashMap<Integer, Key> keyTable;      // Used for looking up symmetric keys associated with circuit IDs.
     private static ConcurrentHashMap<String, Integer> fwdTable;      // Used for finding + forwarding the proper circuit ID to the next OR in the sequence.
 
     /**

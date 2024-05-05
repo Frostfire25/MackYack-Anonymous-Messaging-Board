@@ -1,16 +1,28 @@
 package onionrouting;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 import merrimackutil.json.JsonIO;
 import merrimackutil.json.types.JSONObject;
 import onionrouting.onionrouter_cells.*;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Scanner;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Base64;
+
+import javax.crypto.KeyAgreement;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.PrivateKey;
+import java.security.Key;
+import java.security.KeyPairGenerator;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.InvalidKeySpecException;
 
 /**
  * Class for the threaded service implementation of the OR (to allow for multiple connections through this OR).
@@ -19,19 +31,22 @@ public class OnionRouterService implements Runnable {
 
     private Socket inSock;                                // The incoming socket connection to this OR.
     private Socket outSock;                               // The outgoing socket connection from this OR.
-    private ConcurrentHashMap<Integer, String> keyTable;  // The table used to find symmetric keys based on 
-    private ConcurrentHashMap<String, Integer> fwdTable;  // The table used to find the next circID in the chain based on IP/port combinations
+    private ConcurrentHashMap<Integer, Key> keyTable;     // The table used to find symmetric keys based on.
+    private ConcurrentHashMap<String, Integer> fwdTable;  // The table used to find the next circID in the chain based on IP/port combinations.
+    private PrivateKey privKey;                           // The private key for this OR.
 
     /**
      * Constructor for the threaded service implementation of the OnionRouter. This allows for multiple connections.
      * @param keyTable table for retrieving a key based on the circuit ID.
      * @param fwdTable table for forwarding circuit IDs to the next connection based on IP/port combinations.
      * @param inSock socket connection incoming to this OR.
+     * @param privKey the private key for this OR.
      */
-    public OnionRouterService(ConcurrentHashMap<Integer, String> keyTable, ConcurrentHashMap<String, Integer> fwdTable, Socket inSock) {
+    public OnionRouterService(ConcurrentHashMap<Integer, Key> keyTable, ConcurrentHashMap<String, Integer> fwdTable, Socket inSock, PrivateKey privKey) {
         this.inSock = inSock;
         this.keyTable = keyTable;
         this.fwdTable = fwdTable;
+        this.privKey = privKey;
     }
 
     @Override
@@ -72,7 +87,12 @@ public class OnionRouterService implements Runnable {
                     case "CREATE":
                         CreateCell createCell = new CreateCell(obj);
 
-                        doCreate(createCell);
+                        try {
+                            doCreate(createCell, inSockOut);
+                        } catch(Exception e) {
+                            System.err.println("Could not complete DH KEX with Alice properly.");
+                            System.err.println(e);
+                        }
                         break;
                     case "CREATED":
                         CreatedCell createdCell = new CreatedCell(obj);
@@ -124,8 +144,37 @@ public class OnionRouterService implements Runnable {
      * Performs all the operations to be done on a Create cell when received.
      * @param cell cell we're performing the operation on.
      */
-    private void doCreate(CreateCell cell) {
-        // TODO: CREATE
+    private void doCreate(CreateCell cell, PrintWriter output) throws NoSuchAlgorithmException,
+            InvalidKeyException, InvalidKeySpecException{
+        // 1. Get gX from the cell. Then convert it to a Public Key for DH magic.
+        // Decrypt gX so it can be used.
+        String gX = decryptGX(cell.getgX());
+        // Load the public value from the other side.
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(
+            Base64.getDecoder().decode(gX));
+        PublicKey gXPubKey = KeyFactory.getInstance("EC").generatePublic(spec);
+
+        // 2. Diffie-Hellman stuff
+        KeyAgreement ecdhKex = KeyAgreement.getInstance("ECDH"); // Eliptic Curve Diffie-Hellman
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("EC"); // Generator for elliptic curves (this is our group)    
+        generator.initialize(256);
+
+        // Generate the OR's contribution of the symmetric key.
+        KeyPair pair = generator.generateKeyPair();
+        String gY = Base64.getEncoder().encodeToString(pair.getPublic().getEncoded());
+
+        // Generate the shared secret
+        ecdhKex.init(pair.getPrivate());
+        ecdhKex.doPhase(gXPubKey, true);
+        byte[] sharedSecret = ecdhKex.generateSecret();
+
+        // 3. Send back CreatedCell(gY, H(K || "handshake"))
+        MessageDigest md = new MessageDigest("SHA-3-256");
+        String kHash = "";
+        CreatedCell retCell = new CreatedCell(gY, kHash);
+
+
+        output.println();
         
         /*
          * Steps:

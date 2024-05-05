@@ -14,8 +14,19 @@ import merrimackutil.json.types.JSONType;
 public class CreatedCell implements JSONSerializable {
 
     private final String type = "CREATED";
-    private String gY; // Base 64-encoded second half of Diffie-Hellman KEX.
-    private String kHash; // Base 64-encoded SHA-3 256 hash: H(K || "handshake")
+    private String gY;          // Base 64-encoded second half of Diffie-Hellman KEX.
+    private String kHash;       // Base 64-encoded SHA-3 256 hash: H(K || "handshake").
+
+    /**
+     * Default constructor to initialize a returning CreatedCell object.
+     * 
+     * @param gY Base 64-encoded second half of Diffie-Hellman KEX.
+     * @param kHash Base 64-encoded SHA-3 256 hash: H(K || "handshake").
+     */
+    public CreatedCell(String gY, String kHash) throws InvalidObjectException {
+        this.gY = gY;
+        this.kHash = kHash;
+    }
 
     /**
      * Construct a Created cell from the corresponding JSON object.
