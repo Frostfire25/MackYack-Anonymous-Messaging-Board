@@ -1,5 +1,6 @@
 {
-    "port": 5010,
-    "privKey": "",
-    "routersPath": "./configs/routers.json"
+   "port" : 5010,
+   "routersPath" : "./configs/routers.json",
+   "privKey" : ""
 }
+

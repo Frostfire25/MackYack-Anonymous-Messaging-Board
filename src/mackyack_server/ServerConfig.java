@@ -73,7 +73,7 @@ public class ServerConfig implements JSONSerializable {
     @Override
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
-        obj.put("dns-address", this.privKey);
+        obj.put("privKey", this.privKey);
         obj.put("port", this.port);
         obj.put("routersPath", this.routersPath);
         return obj; // We are never reading this file to JSON.
