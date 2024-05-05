@@ -38,17 +38,7 @@ public class GetResponse implements JSONSerializable {
         if (obj instanceof JSONObject) {
             message = (JSONObject) obj;
 
-            for (Object q : message.getArray("messages")) {
-                if (!(q instanceof JSONObject)) {
-                    throw new InvalidObjectException("Anything inside of messages must be a JSONObject.");
-                }
-
-                JSONObject qObj = (JSONObject) q;
-                messages.add(new Message(qObj.getString("data"), qObj.getString("timestamp")));
-            }
-
-            if (message.size() > 1)
-                throw new InvalidObjectException("Superflous fields");
+            
         }
     }
 

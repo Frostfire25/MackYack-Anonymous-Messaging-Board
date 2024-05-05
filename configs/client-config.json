@@ -1,0 +1,7 @@
+{
+    "port": 5000,
+    "serverAddr": "127.0.0.1",
+    "serverPort": 5010,
+    "serverPubKey": "MIHYMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykA0MAAkADTavAunlm7tkVvqrWbp8+yy5R8BQSo0HZvQxh3NjFWGgB88faQfsxySyJ4lIRXqow89Pej4cKoBeom64vMnrM",
+    "routersPath": "./configs/routers.json"
+}

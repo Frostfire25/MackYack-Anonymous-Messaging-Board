@@ -67,12 +67,24 @@ public class OnionRouterConfig implements JSONSerializable {
         return obj; // We are never reading this file to JSON.
     }
 
+    /**
+     * Accessors 
+     * @return
+     */
+
     public String getPrivateKey() {
         return privateKey;
     }
 
     public int getPort() {
         return port;
+    }
+
+    /**
+     * Modifiers
+     */
+    public void setPrivateKey(String key) {
+        this.privateKey = key;
     }
 
 }
