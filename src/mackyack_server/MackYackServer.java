@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.security.NoSuchAlgorithmException;
 
-import mackyack_client.RoutersConfig;
 import merrimackutil.cli.LongOption;
 import merrimackutil.cli.OptionParser;
 import merrimackutil.json.JsonIO;
