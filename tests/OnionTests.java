@@ -44,6 +44,7 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class OnionTests {
     
@@ -76,8 +77,8 @@ public class OnionTests {
         ConcurrentHashMap<String, Integer> fwdTable = new ConcurrentHashMap<>();
 
         // Set up the pub/priv key to be the pub/priv keys for router 0 (testing, so we can write it in w/o config files)
-        PrivateKey privKey = getPrivateKey("MIHbAgEAMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykBEMCQQDG2husnhV1cYYIS/XYhbHONvIRLCOg2Dakq42gTQ39ANffdAiQBKD/vqZZxovXYZVGOHPWuxXKaK6Mlh1Yt3Cz");
-        PublicKey pubKey = getPublicKey("MIHZMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykA0QAAkEA6kte8f+YXQaUBfLdfB1eUfigD/DcEVtYDTCfntAAF4RdORWNhhKewzcqcN0aL/oy99aEQGB1LN80pno73B3nUQ==");
+        PrivateKey privKey = getPrivateKey("ElGamal", "MIHbAgEAMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykBEMCQQDG2husnhV1cYYIS/XYhbHONvIRLCOg2Dakq42gTQ39ANffdAiQBKD/vqZZxovXYZVGOHPWuxXKaK6Mlh1Yt3Cz");
+        PublicKey pubKey = getPublicKey("ElGamal", "MIHZMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykA0QAAkEA6kte8f+YXQaUBfLdfB1eUfigD/DcEVtYDTCfntAAF4RdORWNhhKewzcqcN0aL/oy99aEQGB1LN80pno73B3nUQ==");
 
         // Start the server socket in a separate thread
         Thread serverThread = new Thread(() -> {
@@ -127,31 +128,23 @@ public class OnionTests {
             // B64_Encrypted SYM Key
             String B64_encrypted_sym_key = Base64.getEncoder().encodeToString(encrypted_sym_key);
 
+
             // 2. Send a CreateCell 
             CreateCell cell = new CreateCell(symmetricKey_CipherText.getSecond(), 5, B64_encrypted_sym_key);
             out.println(cell.serialize());
             System.out.println("Sent to OR.");
 
 
-
-
-
-
-
-            // 3. Receive gY and the hash, and assert they're the same.
+            // 3. Receive gY and the hash, and generate K (using: g^xy)
             JSONObject obj = JsonIO.readObject(in.nextLine());
             if(!obj.containsKey("type") || !obj.getString("type").equals("CREATED"))
                 throw new InvalidObjectException("Expected CreatedCell");
             
             CreatedCell recvCell = new CreatedCell(obj);
-            String gY = recvCell.getgY();
+            PublicKey gYPubKey = getPublicKey("EC", recvCell.getgY());
             String recvKHash = recvCell.getkHash();
 
-            // Generate the shared secret using gY
-            // Load the public value from the other side.
-            X509EncodedKeySpec spec = new X509EncodedKeySpec(Base64.getDecoder().decode(gY));
-            PublicKey gYPubKey = KeyFactory.getInstance("EC").generatePublic(spec);
-            
+            // Do the DH magic.
             ecdhKex.init(pair.getPrivate());
             ecdhKex.doPhase(gYPubKey, true);
             byte[] sharedSecret = ecdhKex.generateSecret();
@@ -163,7 +156,9 @@ public class OnionTests {
             String kHash = Base64.getEncoder().encodeToString(md.digest());
 
             assertEquals(recvKHash, kHash);
+            assertEquals(new SecretKeySpec(sharedSecret, "AES"), keyTable.get(5));
 
+            in.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -181,7 +176,7 @@ public class OnionTests {
      * @throws NoSuchAlgorithmException 
      * @throws InvalidKeySpecException 
      */
-    private PrivateKey getPrivateKey(String str) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    private PrivateKey getPrivateKey(String algorithm, String str) throws NoSuchAlgorithmException, InvalidKeySpecException {
         // Decode the base64 encoded private key string
         byte[] privateKeyBytes = Base64.getDecoder().decode(str);
 
@@ -189,7 +184,7 @@ public class OnionTests {
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
 
         // Get an instance of the KeyFactory for ElGamal algorithm
-        KeyFactory keyFactory = KeyFactory.getInstance("ElGamal");
+        KeyFactory keyFactory = KeyFactory.getInstance(algorithm);
 
         // Generate the PrivateKey object using the KeyFactory
         return keyFactory.generatePrivate(keySpec);
@@ -203,7 +198,7 @@ public class OnionTests {
      * @throws InvalidKeySpecException 
      * @throws NoSuchAlgorithmException 
      */
-    private PublicKey getPublicKey(String str) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    private PublicKey getPublicKey(String algorithm, String str) throws NoSuchAlgorithmException, InvalidKeySpecException {
         // Decode the base64 encoded public key string
         byte[] publicKeyBytes = Base64.getDecoder().decode(str);
 
@@ -211,7 +206,7 @@ public class OnionTests {
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
 
         // Get an instance of the KeyFactory for ElGamal algorithm
-        KeyFactory keyFactory = KeyFactory.getInstance("ElGamal");
+        KeyFactory keyFactory = KeyFactory.getInstance(algorithm);
 
         // Generate the PublicKey object using the KeyFactory
         return keyFactory.generatePublic(keySpec);

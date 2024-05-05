@@ -17,7 +17,8 @@ public class ExtendCell implements JSONSerializable {
     private int circID;
     private String addr; // Address of the OR to add to the circuit
     private int port; // Port of the OR to add to the circuit
-    private String gX; // Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
+    private String gX; // Base 64-encoded first half of Diffie-Hellman KEX encrypted in the ephemeral key.
+    private String encryptedSymKey; // Base 64-encoded ephemeral key (symmetric) encrypted in the OR's public key.
 
     /**
      * Construct a RelayExtend cell from the corresponding JSON object.
@@ -46,24 +47,29 @@ public class ExtendCell implements JSONSerializable {
                 throw new InvalidObjectException("Type is incorrectly specified for Extend cell.");
 
             if (!message.containsKey("circID"))
-                throw new InvalidObjectException("RelayExtend needs an circID.");
+                throw new InvalidObjectException("Extend needs an circID.");
             else
                 circID = message.getInt("circID");
 
             if (!message.containsKey("addr"))
-                throw new InvalidObjectException("RelayExtend needs an addr.");
+                throw new InvalidObjectException("Extend needs an addr.");
             else
                 addr = message.getString("addr");
 
             if (!message.containsKey("port"))
-                throw new InvalidObjectException("RelayExtend needs a port.");
+                throw new InvalidObjectException("Extend needs a port.");
             else
                 port = message.getInt("port");
 
             if(!message.containsKey("gX"))
-                throw new InvalidObjectException("RelayExtend needs gX.");
+                throw new InvalidObjectException("Extend needs gX.");
             else
                 gX = message.getString("gX");
+
+            if (!message.containsKey("encryptedSymKey"))
+                throw new InvalidObjectException("Extend needs a encryptedSymKey.");
+            else
+                encryptedSymKey = message.getString("encryptedSymKey");
 
             if (message.size() > 5)
                 throw new InvalidObjectException("Superflous fields");
@@ -94,6 +100,7 @@ public class ExtendCell implements JSONSerializable {
         obj.put("addr", addr);
         obj.put("port", port);
         obj.put("gX", gX);
+        obj.put("encryptedSymKey", encryptedSymKey);
 
         return obj;
     }
@@ -116,6 +123,10 @@ public class ExtendCell implements JSONSerializable {
 
     public String getgX() {
         return gX;
+    }
+
+    public String getEncryptedSymKey() {
+        return encryptedSymKey;
     }
 
 }

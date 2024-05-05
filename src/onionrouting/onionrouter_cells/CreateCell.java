@@ -14,8 +14,8 @@ public class CreateCell implements JSONSerializable {
 
     private final String type = "CREATE";
     private int circID;
-    private String gX; // Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
-    private String encyptedSymKey;
+    private String gX; // Base 64-encoded first half of Diffie-Hellman KEX encrypted in the ephemeral key.
+    private String encryptedSymKey; // Base 64-encoded ephemeral key (symmetric) encrypted in the OR's public key.
 
     /**
      * Default constructor to initialize an outgoing CreateCell object.
@@ -27,7 +27,7 @@ public class CreateCell implements JSONSerializable {
     public CreateCell(String gX, int circID, String encyptedSymKey) {
         this.gX = gX;
         this.circID = circID;
-        this.encyptedSymKey = encyptedSymKey;
+        this.encryptedSymKey = encyptedSymKey;
     }
     
     /**
@@ -66,10 +66,10 @@ public class CreateCell implements JSONSerializable {
             else
                 gX = message.getString("gX");
 
-            if (!message.containsKey("encyptedSymKey"))
-                throw new InvalidObjectException("Create needs a encyptedSymKey.");
+            if (!message.containsKey("encryptedSymKey"))
+                throw new InvalidObjectException("Create needs a encryptedSymKey.");
             else
-                encyptedSymKey = message.getString("encyptedSymKey");
+                encryptedSymKey = message.getString("encryptedSymKey");
                 
 
             if (message.size() > 4)
@@ -99,7 +99,7 @@ public class CreateCell implements JSONSerializable {
         obj.put("type", type);
         obj.put("circID", circID);
         obj.put("gX", gX);
-        obj.put("encyptedSymKey", encyptedSymKey);
+        obj.put("encryptedSymKey", encryptedSymKey);
 
         return obj;
     }
@@ -117,6 +117,6 @@ public class CreateCell implements JSONSerializable {
     }
 
     public String getEncryptedSymKey() {
-        return encyptedSymKey;
+        return encryptedSymKey;
     }
 }

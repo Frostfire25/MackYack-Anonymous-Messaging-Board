@@ -33,6 +33,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -295,32 +296,6 @@ public class OnionRouterService implements Runnable {
     /*
         Helper methods
     */
-
-
-    /**
-     * Decrypts gX that's encoded in this OR's pubKey.
-     * 
-     * @param encryptedgX gX that's encrypted in this OR's pubKey.
-     * @return gX plain text byte data.
-     * @throws NoSuchPaddingException 
-     * @throws NoSuchAlgorithmException 
-     * @throws InvalidKeyException 
-    private byte[] decryptgX(String encryptedgX) {
-        try {
-            // Convert to byte data
-            byte[] ciphertext = Base64.getDecoder().decode(encryptedgX);
-
-            // Initialize the cipher + decrypt
-            Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, privKey);
-            return cipher.doFinal(ciphertext);
-        } catch (Exception e) {
-            System.err.println("Error decrypting gX from CreateCell.");
-            System.err.println(e);
-            return null;
-        }
-    }
-    **/
 
     /**
      * Used to decrypt for G^x (ciphertext) 

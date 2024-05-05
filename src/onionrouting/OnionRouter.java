@@ -3,9 +3,17 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Base64;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.security.Key;
+import java.security.KeyFactory;
 
 import merrimackutil.cli.LongOption;
 import merrimackutil.cli.OptionParser;
@@ -29,6 +37,7 @@ public class OnionRouter
     // OR-specific fields:
     private static ConcurrentHashMap<Integer, Key> keyTable;      // Used for looking up symmetric keys associated with circuit IDs.
     private static ConcurrentHashMap<String, Integer> fwdTable;      // Used for finding + forwarding the proper circuit ID to the next OR in the sequence.
+    private static PrivateKey privKey;
 
     /**
      * Prints the usage to the screen and exits.
@@ -182,15 +191,50 @@ public class OnionRouter
             System.exit(0);
         }
 
+        // Initialize the private key as a PrivateKey object.
+        try {
+            privKey = getPrivateKey("ElGamal", conf.getPrivateKey());
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            System.err.println("Error deserializing private key for this OR.");
+            e.printStackTrace();
+            
+        }
 
         // Initialize the maps
         keyTable = new ConcurrentHashMap<>();
         fwdTable = new ConcurrentHashMap<>();
 
-        // TODO: Server implementation
-        System.out.println("Onion Router built successfully.");
+        // Initialize the router's "Server" capability (AKA allow for incoming connections)
+        ServerSocket server = new ServerSocket(conf.getPort());
 
-        // We don't care about our threads, just crudely shutdown.
-        System.exit(0);
+        System.out.println("Onion Router started on port: " + conf.getPort());
+
+        while(true) {
+            Socket sock = server.accept();
+            Thread ORServiceThread = new Thread(new OnionRouterService(keyTable, fwdTable, sock, privKey));
+            ORServiceThread.start();
+        }
+    }
+
+    /**
+     * Decodes from Base64 encoding and returns Private Key object.
+     * 
+     * @param str base 64 encoding.
+     * @return Private Key object representation.
+     * @throws NoSuchAlgorithmException 
+     * @throws InvalidKeySpecException 
+     */
+    private static PrivateKey getPrivateKey(String algorithm, String str) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        // Decode the base64 encoded private key string
+        byte[] privateKeyBytes = Base64.getDecoder().decode(str);
+
+        // Create a PKCS8EncodedKeySpec object from the decoded bytes
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
+
+        // Get an instance of the KeyFactory for ElGamal algorithm
+        KeyFactory keyFactory = KeyFactory.getInstance(algorithm);
+
+        // Generate the PrivateKey object using the KeyFactory
+        return keyFactory.generatePrivate(keySpec);
     }
 }

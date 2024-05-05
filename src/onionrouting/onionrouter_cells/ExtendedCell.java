@@ -43,7 +43,7 @@ public class ExtendedCell implements JSONSerializable {
                 throw new InvalidObjectException("Type is incorrectly specified for Extended cell.");
 
             if (!message.containsKey("circID"))
-                throw new InvalidObjectException("RelayExtend needs an circID.");
+                throw new InvalidObjectException("Extended needs an circID.");
             else
                 circID = message.getInt("circID");
 
