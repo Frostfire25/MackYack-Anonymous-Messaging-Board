@@ -2,7 +2,6 @@ package onionrouting;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InvalidObjectException;
-import java.net.InetAddress;
 import merrimackutil.json.JSONSerializable;
 import merrimackutil.json.JsonIO;
 import merrimackutil.json.types.JSONObject;

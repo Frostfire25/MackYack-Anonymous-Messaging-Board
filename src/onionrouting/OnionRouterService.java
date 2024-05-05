@@ -15,6 +15,7 @@ import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import java.security.KeyPair;
@@ -170,7 +171,7 @@ public class OnionRouterService implements Runnable {
             InvalidKeyException, InvalidKeySpecException{
         // 1. Get gX from the cell. Then convert it to a Public Key for DH magic.
         // Decrypt gX so it can be used.
-        byte[] gX = decryptgX(cell.getgX());
+        byte[] gX = decryptHybrid(cell.getEncryptedSymKey(), cell.getgX());
 
         // If gX is null, that means we encountered an error. Send back a CreatedCell with all empty fields and return.
         if(gX == null) {
@@ -207,13 +208,12 @@ public class OnionRouterService implements Runnable {
         md.update("handshake".getBytes());
         String kHash = Base64.getEncoder().encodeToString(md.digest());
         
+        // 4. Store circID + key K in table
+        keyTable.put(cell.getCircID(), new SecretKeySpec(sharedSecret, "AES"));
+
         // Package in CreatedCell and return it back.
         CreatedCell retCell = new CreatedCell(gY, kHash);
         output.println(retCell.serialize());
-        
-
-        // 4. Store circID + key K in table
-        keyTable.put(cell.getCircID(), new SecretKeySpec(sharedSecret, "AES"));
     }
 
 
@@ -300,7 +300,6 @@ public class OnionRouterService implements Runnable {
      * @throws NoSuchPaddingException 
      * @throws NoSuchAlgorithmException 
      * @throws InvalidKeyException 
-     */
     private byte[] decryptgX(String encryptedgX) {
         try {
             // Convert to byte data
@@ -310,6 +309,47 @@ public class OnionRouterService implements Runnable {
             Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, privKey);
             return cipher.doFinal(ciphertext);
+        } catch (Exception e) {
+            System.err.println("Error decrypting gX from CreateCell.");
+            System.err.println(e);
+            return null;
+        }
+    }
+    **/
+
+    /**
+     * Used to decrypt for G^x (ciphertext) 
+     * and decrypt the symmetric key (encrypted_sym_key) using PrivateKey in this OnionRouter.
+     * 
+     * @param encrypted_sym_key
+     * @param cyphertext
+     * @return
+     */
+    public byte[] decryptHybrid(String encrypted_sym_key, final String cyphertext) {
+        try {
+            // Decrypt the Symmetric Key
+            // Initialize the cipher + decrypt
+            Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, privKey);
+            byte[] sym_key = cipher.doFinal(Base64.getDecoder().decode(encrypted_sym_key));
+            String[] sym_key_iv_split = new String(sym_key).split(":");
+
+            // Split the Key:IV string up by colon (:)
+            final String key = sym_key_iv_split[0];
+            final String iv = sym_key_iv_split[1];
+
+            // Set up an AES cipher object.
+            Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+
+            SecretKeySpec aesKey = new SecretKeySpec(Base64.getDecoder().decode(key), "AES");
+
+            // Put the cipher in decrypt mode with the specified key.
+            aesCipher.init(Cipher.DECRYPT_MODE, aesKey, new IvParameterSpec(Base64.getDecoder().decode(iv)));
+            
+            // Decrypt the message all in one call.
+            byte[] plaintext = aesCipher.doFinal(Base64.getDecoder().decode(cyphertext));
+
+            return plaintext;
         } catch (Exception e) {
             System.err.println("Error decrypting gX from CreateCell.");
             System.err.println(e);

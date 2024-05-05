@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import merrimackutil.json.JsonIO;
 import merrimackutil.json.types.JSONObject;
+import merrimackutil.util.Pair;
 import onionrouting.OnionRouterService;
 import onionrouting.onionrouter_cells.CreateCell;
 import onionrouting.onionrouter_cells.CreatedCell;
@@ -17,6 +18,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -26,6 +28,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -38,7 +41,10 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyAgreement;
+import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class OnionTests {
     
@@ -60,7 +66,7 @@ public class OnionTests {
     @Test
     public void testCreateCell() throws UnknownHostException, IOException, NoSuchAlgorithmException,
     InvalidKeySpecException, InvalidKeyException, IllegalStateException, IllegalBlockSizeException,
-    BadPaddingException, NoSuchPaddingException {
+    BadPaddingException, NoSuchPaddingException, InvalidAlgorithmParameterException {
         // Add the BCProvider
         Security.addProvider(new BouncyCastleProvider());
 
@@ -80,6 +86,7 @@ public class OnionTests {
                 ServerSocket server = new ServerSocket(5010); // Setting up server for p2p testing
                 Socket sock = server.accept();
                 OnionRouterService ors = new OnionRouterService(keyTable, fwdTable, sock, privKey);
+                ors.run();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -112,14 +119,24 @@ public class OnionTests {
             Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, pubKey);
 
-            // Encrypt the gX string
-            String gXEncrypted = Base64.getEncoder().encodeToString(cipher.doFinal(gXBytes));
+            // Pair of <SymmetricKey:IV> & <Cipher text of Symmetric Encrypted g^x as bytes.
+            Pair<String> symmetricKey_CipherText = encryptHybrid(gXBytes);
 
+            // Encrypt the symmetricKey_CipherText Key+IV
+            byte[] encrypted_sym_key = cipher.doFinal(symmetricKey_CipherText.getFirst().getBytes());
+
+            // B64_Encrypted SYM Key
+            String B64_encrypted_sym_key = Base64.getEncoder().encodeToString(encrypted_sym_key);
 
             // 2. Send a CreateCell 
-            CreateCell cell = new CreateCell(gXEncrypted, 5);
+            CreateCell cell = new CreateCell(symmetricKey_CipherText.getSecond(), 5, B64_encrypted_sym_key);
             out.println(cell.serialize());
             System.out.println("Sent to OR.");
+
+
+
+
+
 
 
             // 3. Receive gY and the hash, and assert they're the same.
@@ -200,5 +217,60 @@ public class OnionTests {
         // Generate the PublicKey object using the KeyFactory
         return keyFactory.generatePublic(keySpec);
     }
+
+    /**
+     * Constructs a B64Encoded(key):B64Encoded(IV) that represents a Symmetric Key+IV pair.
+     * 
+     * @return
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     * @throws InvalidKeyException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidAlgorithmParameterException
+     */
+    public Pair<String> encryptHybrid(byte[] data) throws
+        NoSuchAlgorithmException, NoSuchPaddingException,
+        InvalidKeyException, IllegalBlockSizeException,
+        BadPaddingException, InvalidAlgorithmParameterException
+    {
+        Cipher aesCipher;                // The cipher object
+        KeyGenerator aesKeyGen;          // The AES keygenerator.
+        SecureRandom rand;               // A secure random number generator.
+        byte[] rawIV = new byte[16];     // An AES init. vector.
+        IvParameterSpec iv;              // The IV parameter for CBC. Different ciphers
+                                         // may have different specifications.
+                            
+        // Set up an AES cipher object.
+        aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        // Get a key generator object and set the key size to 128 bits.
+        aesKeyGen = KeyGenerator.getInstance("AES");
+        aesKeyGen.init(128);
+
+        // Generate the key.
+        Key aesKey = aesKeyGen.generateKey();
+
+        // Generate the IV for CBC mode.
+        rand = new SecureRandom();
+        rand.nextBytes(rawIV);          // Fill array with random bytes.
+        iv = new IvParameterSpec(rawIV);
+
+        aesCipher.init(Cipher.ENCRYPT_MODE, aesKey, iv);
+
+        byte[] ciphertext = aesCipher.doFinal(data);
+
+        
+        //return new Pair<byte[]>(aesKey.getEncoded(), iv.getIV());
+        //return new Pair<String>(Base64.getEncoder().encodeToString(aesKey.getEncoded()), Base64.getEncoder().encodeToString(iv.getIV()));
+        //Base64.getEncoder().encodeToString(aesKey.getEncoded()) + ":" + Base64.getEncoder().encodeToString(iv.getIV());
+
+        return new Pair<String>(
+            Base64.getEncoder().encodeToString(aesKey.getEncoded()) + ":" + Base64.getEncoder().encodeToString(iv.getIV()), // Symmetric Key:IV pair as a String
+            Base64.getEncoder().encodeToString(ciphertext)                                                                  // CipherText encoded to String
+        );
+    }
+
+    
+
 
 }

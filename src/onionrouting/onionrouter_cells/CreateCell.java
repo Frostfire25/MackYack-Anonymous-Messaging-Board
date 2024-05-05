@@ -15,16 +15,19 @@ public class CreateCell implements JSONSerializable {
     private final String type = "CREATE";
     private int circID;
     private String gX; // Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
+    private String encyptedSymKey;
 
     /**
      * Default constructor to initialize an outgoing CreateCell object.
      * 
-     * @param gX Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
+     * @param gX Encrypted Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
      * @param circID circuit ID
+     * @param Encrypted Symmetric Key used to decrypt gX
      */
-    public CreateCell(String gX, int circID) {
+    public CreateCell(String gX, int circID, String encyptedSymKey) {
         this.gX = gX;
         this.circID = circID;
+        this.encyptedSymKey = encyptedSymKey;
     }
     
     /**
@@ -63,7 +66,13 @@ public class CreateCell implements JSONSerializable {
             else
                 gX = message.getString("gX");
 
-            if (message.size() > 3)
+            if (!message.containsKey("encyptedSymKey"))
+                throw new InvalidObjectException("Create needs a encyptedSymKey.");
+            else
+                encyptedSymKey = message.getString("encyptedSymKey");
+                
+
+            if (message.size() > 4)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -90,6 +99,7 @@ public class CreateCell implements JSONSerializable {
         obj.put("type", type);
         obj.put("circID", circID);
         obj.put("gX", gX);
+        obj.put("encyptedSymKey", encyptedSymKey);
 
         return obj;
     }
@@ -104,5 +114,9 @@ public class CreateCell implements JSONSerializable {
 
     public String getgX() {
         return gX;
+    }
+
+    public String getEncryptedSymKey() {
+        return encyptedSymKey;
     }
 }
