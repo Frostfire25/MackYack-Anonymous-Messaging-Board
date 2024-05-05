@@ -53,7 +53,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <exclude name="mackyack_server/"/>
       <exclude name="onionrouting/OnionRouter.java"/>
       <manifest>
-        <attribute name="Main-Class" value="mackyack_client/App" />
+        <attribute name="Main-Class" value="mackyack_client/MackYackClient" />
       </manifest>
       <zipfileset src="lib/merrimackutil.jar" excludes="META-INF/*.SF" />
     </jar>

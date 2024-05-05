@@ -15,16 +15,15 @@ public class MackYackServer
 {
     public static boolean doHelp = false;               // True if help option present.
     private static ServerConfig conf = null;            // The configuration information.
-    private static String configFile = "config.json";   // Default configuration file.
+    private static String configFile = "./configs/server-config.json";   // Default configuration file.
     
-
     /**
      * Prints the usage to the screen and exits.
      */
     public static void usage() {
         System.out.println("usage:");
-        System.out.println("  dhtnode --config <config>");
-        System.out.println("  dhtnode --help");
+        System.out.println("  mackyack_server --config <config>");
+        System.out.println("  mackyack_server --help");
         System.out.println("options:");
         System.out.println("  -c, --config\t\tConfig file to use.");
         System.out.println("  -h, --help\t\tDisplay the help.");

@@ -11,13 +11,12 @@ import merrimackutil.util.Tuple;
 /**
  * This is the main client-side application. Its job is to contact the MackYack server through Onion Routing.
  */
-public class App
+public class MackYackClient
 {
     public static boolean doHelp = false;                       // True if help option present.
     private static ClientConfig conf = null;                    // The configuration information.
     private static String configFile = "client-config.json";    // Default configuration file.
     
-
     /**
      * Prints the usage to the screen and exits.
      */

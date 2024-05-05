@@ -19,7 +19,7 @@ public class OnionRouter
     // Basic fields:
     public static boolean doHelp = false;               // True if help option present.
     private static OnionRouterConfig conf = null;       // The configuration information.
-    private static String configFile = "config.json";   // Default configuration file.
+    private static String configFile = "";   // Default configuration file.
     
     // OR-specific fields:
     private static ConcurrentHashMap<Integer, String> keyTable;      // Used for looking up symmetric keys associated with circuit IDs.
@@ -104,6 +104,10 @@ public class OnionRouter
     {
         try
         { 
+            if(configFile == null || configFile.isEmpty()) {
+                throw new FileNotFoundException("File config can not be empty for Onion Router. Please choose a specific router.");
+            }
+
             conf = new OnionRouterConfig(configFile);
         }
         catch(InvalidObjectException ex)
