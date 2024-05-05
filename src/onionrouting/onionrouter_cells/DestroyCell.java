@@ -1,4 +1,4 @@
-package onionrouter_cells;
+package onionrouting.onionrouter_cells;
 
 import java.io.InvalidObjectException;
 
@@ -11,8 +11,9 @@ import merrimackutil.json.types.JSONType;
  * Sent from Client to the first onion router to break down the established
  * circuit (recursively).
  */
-public class Destroy implements JSONSerializable {
+public class DestroyCell implements JSONSerializable {
 
+    private final String type = "DESTROY";
     private int circID;
 
     /**
@@ -20,7 +21,7 @@ public class Destroy implements JSONSerializable {
      * 
      * @param obj a JSON object representing a Destroy cell.
      */
-    public Destroy(JSONObject obj) throws InvalidObjectException {
+    public DestroyCell(JSONObject obj) throws InvalidObjectException {
         deserialize(obj);
     }
 
@@ -36,12 +37,17 @@ public class Destroy implements JSONSerializable {
         if (obj instanceof JSONObject) {
             message = (JSONObject) obj;
 
+            if (!message.containsKey("type"))
+                throw new InvalidObjectException("Destroy needs a type.");
+            else if(!message.getString("type").equals(type))
+                throw new InvalidObjectException("Type is incorrectly specified for Destroy cell.");
+
             if (!message.containsKey("circID"))
                 throw new InvalidObjectException("Destroy needs a circID.");
             else
                 circID = message.getInt("circID");
 
-            if (message.size() > 1)
+            if (message.size() > 2)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -65,9 +71,14 @@ public class Destroy implements JSONSerializable {
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
 
+        obj.put("type", type);
         obj.put("circID", circID);
 
         return obj;
+    }
+
+    public String getType() {
+        return type;
     }
 
     public int getCircID() {

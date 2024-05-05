@@ -1,0 +1,202 @@
+package onionrouting;
+
+import java.util.concurrent.ConcurrentHashMap;
+
+import merrimackutil.json.JsonIO;
+import merrimackutil.json.types.JSONObject;
+import onionrouting.onionrouter_cells.*;
+
+import java.util.Scanner;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.PrintWriter;
+import java.net.Socket;
+
+/**
+ * Class for the threaded service implementation of the OR (to allow for multiple connections through this OR).
+ */
+public class OnionRouterService implements Runnable {
+
+    private Socket inSock;                                // The incoming socket connection to this OR.
+    private Socket outSock;                               // The outgoing socket connection from this OR.
+    private ConcurrentHashMap<Integer, String> keyTable;  // The table used to find symmetric keys based on 
+    private ConcurrentHashMap<String, Integer> fwdTable;  // The table used to find the next circID in the chain based on IP/port combinations
+
+    /**
+     * Constructor for the threaded service implementation of the OnionRouter. This allows for multiple connections.
+     * @param keyTable table for retrieving a key based on the circuit ID.
+     * @param fwdTable table for forwarding circuit IDs to the next connection based on IP/port combinations.
+     * @param inSock socket connection incoming to this OR.
+     */
+    public OnionRouterService(ConcurrentHashMap<Integer, String> keyTable, ConcurrentHashMap<String, Integer> fwdTable, Socket inSock) {
+        this.inSock = inSock;
+        this.keyTable = keyTable;
+        this.fwdTable = fwdTable;
+    }
+
+    @Override
+    public void run() {
+        // Initialize the I/O
+        Scanner inSockIn = null;
+        PrintWriter inSockOut = null;
+        Scanner outSockIn = null;
+        PrintWriter outSockOut = null;
+        try {
+            inSockIn = new Scanner(inSock.getInputStream());
+            inSockOut = new PrintWriter(inSock.getOutputStream());
+        }
+        catch(IOException ex) {
+            System.err.println(ex);
+        }
+
+        // Run while the connection is alive in this circuit:
+        while(true) {
+
+            // Read the type of the incoming cell
+            JSONObject obj = JsonIO.readObject(inSockIn.nextLine());
+            if(!obj.containsKey("type"))
+            {
+                System.err.println("Could not determine the type of the cell. Cell will be dropped");
+                continue;
+            }
+
+            String type = obj.getString("type");
+
+            try {
+                switch(type) {
+                    case "RELAY":
+                        RelayCell relayCell = new RelayCell(obj);
+
+                        doRelay(relayCell);
+                        break;
+                    case "CREATE":
+                        CreateCell createCell = new CreateCell(obj);
+
+                        doCreate(createCell);
+                        break;
+                    case "CREATED":
+                        CreatedCell createdCell = new CreatedCell(obj);
+
+                        doCreated(createdCell);
+                        break;
+                    case "DESTROY":
+                        DestroyCell destroyCell = new DestroyCell(obj);
+
+                        doDestroy(destroyCell);
+                        break;
+                    case "EXTEND":
+                        ExtendCell extendCell = new ExtendCell(obj);
+
+                        doExtend(extendCell);
+                        break;
+                    case "EXTENDED":
+                        ExtendedCell extendedCell = new ExtendedCell(obj);
+
+                        doExtended(extendedCell);
+                        break;
+                }
+            } catch (InvalidObjectException ex) {
+                System.err.println("Invalid Object parsed.");
+                System.err.println(ex.getMessage());
+            }
+        }
+    }
+
+
+    /**
+     * Performs all the operations to be done on a Relay cell when received.
+     * @param cell cell we're performing the operation on.
+     */
+    private void doRelay(RelayCell cell) {
+        // TODO: RELAY
+
+        /*
+         * Steps:
+         *  1. Decrypt
+         *  2. Pass it along
+         * 
+         *  Notes: Relay basically means "encrypted" for our implementation,
+         *         and thus do not interpret -- just relay the message along.
+         */
+    }
+
+    /**
+     * Performs all the operations to be done on a Create cell when received.
+     * @param cell cell we're performing the operation on.
+     */
+    private void doCreate(CreateCell cell) {
+        // TODO: CREATE
+        
+        /*
+         * Steps:
+         *  1. Get gX from the cell.
+         *  2. Get the shared secret + create K
+         *  3. Send back a CreatedCell(gY, H(K || "handshake"))
+         *      a. Note: No encryption on this part. None needed b/c gY is not enough to make K vulnerable
+         *  4. Store circID + K in keyTable
+         */
+    }
+
+    /**
+     * Performs all the operations to be done on a Created cell when received.
+     * @param cell cell we're performing the operation on.
+     */
+    private void doCreated(CreatedCell cell) {
+        // TODO: CREATED
+        
+        /*
+         * Steps:
+         *  1. Encapsulate in an ExtendedCell
+         *  2. Send back the ExtendedCell
+         * 
+         *  Notes: CREATE and CREATED are sent + received by the last OR before the extension occurs
+         */
+    }
+
+    /**
+     * Performs all the operations to be done on a Destroy cell when received.
+     * @param cell cell we're performing the operation on.
+     */
+    private void doDestroy(DestroyCell cell) {
+        // TODO: DESTROY
+        
+        /*
+         * Steps:
+         *  1. Break down connections to inSock
+         *  2. Send DestroyCell() forward to next OR (if one exists, check fwd table)
+         *  3. Break down connections to outSock
+         * 
+         *  Notes: Might need to bring the Scanners/PrintWriters and sockets
+         *         themselves as args to this method.
+         */
+    }
+
+    /**
+     * Performs all the operations to be done on an Extend cell when received.
+     * @param cell cell we're performing the operation on.
+     */
+    private void doExtend(ExtendCell cell) {
+        // TODO: EXTEND
+        
+        /*
+         * Steps:
+         *  1. Come up with a circID for the next node.
+         *  2. Send Create(newCirdID) to specified IP/port combo
+         */
+    }
+
+    /**
+     * Performs all the operations to be done on an Extended cell when received.
+     * @param cell cell we're performing the operation on.
+     */
+    private void doExtended(ExtendedCell cell) {
+        // TODO: EXTENDED
+        
+        /*
+         * Steps:
+         *  1. Encrypt in sym key for Alice
+         *  2. Send Relay() message back towards Alice
+         */
+    }
+    
+}

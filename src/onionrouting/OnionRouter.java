@@ -2,6 +2,7 @@ package onionrouting;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.util.concurrent.ConcurrentHashMap;
 
 import merrimackutil.cli.LongOption;
 import merrimackutil.cli.OptionParser;
@@ -9,22 +10,28 @@ import merrimackutil.util.Tuple;
 
 
 /**
- * This is the Mack Yack Server. Its job is to service Mack Yack to any anonymous parties that want to use it.
+ * This is the Onion Router object. Its job is to provide onion routing through an overlay network for some application layer protocol.
+ * 
+ * @author Derek Costello
  */
 public class OnionRouter
 {
+    // Basic fields:
     public static boolean doHelp = false;               // True if help option present.
-    private static OnionRouterConfig conf = null;            // The configuration information.
+    private static OnionRouterConfig conf = null;       // The configuration information.
     private static String configFile = "config.json";   // Default configuration file.
     
+    // OR-specific fields:
+    private static ConcurrentHashMap<Integer, String> keyTable;      // Used for looking up symmetric keys associated with circuit IDs.
+    private static ConcurrentHashMap<String, Integer> fwdTable;      // Used for finding + forwarding the proper circuit ID to the next OR in the sequence.
 
     /**
      * Prints the usage to the screen and exits.
      */
     public static void usage() {
         System.out.println("usage:");
-        System.out.println("  dhtnode --config <config>");
-        System.out.println("  dhtnode --help");
+        System.out.println("  onionrouter --config <config>");
+        System.out.println("  onionrouter --help");
         System.out.println("options:");
         System.out.println("  -c, --config\t\tConfig file to use.");
         System.out.println("  -h, --help\t\tDisplay the help.");
@@ -124,7 +131,11 @@ public class OnionRouter
         if (args.length > 2)
             usage();
 
-        processArgs(args); 
+        processArgs(args);
+
+        // Initialize the maps
+        keyTable = new ConcurrentHashMap<>();
+        fwdTable = new ConcurrentHashMap<>();
 
         // TODO: Server implementation
         System.out.println("Onion Router built successfully.");

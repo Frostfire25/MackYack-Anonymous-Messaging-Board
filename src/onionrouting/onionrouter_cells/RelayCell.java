@@ -1,4 +1,4 @@
-package onionrouter_cells;
+package onionrouting.onionrouter_cells;
 
 import java.io.InvalidObjectException;
 
@@ -7,20 +7,21 @@ import merrimackutil.json.types.JSONObject;
 import merrimackutil.json.types.JSONType;
 
 /**
- * Client -> First OR
- * Sent from Client to the first onion router to create a circuit.
+ * Client -> Last OR in Circuit
+ * Sent from Client to the first OR in the circuit but forwarded to the last OR
+ * in the circuit to extend the circuit by another node.
  */
-public class Create implements JSONSerializable {
+public class RelayCell implements JSONSerializable {
 
+    private final String type = "RELAY";
     private int circID;
-    private String gX; // Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
 
     /**
-     * Construct a Create cell from the corresponding JSON object.
+     * Construct a RelayExtend cell from the corresponding JSON object.
      * 
-     * @param obj a JSON object representing a Create cell.
+     * @param obj a JSON object representing a RelayExtend cell.
      */
-    public Create(JSONObject obj) throws InvalidObjectException {
+    public RelayCell(JSONObject obj) throws InvalidObjectException {
         deserialize(obj);
     }
 
@@ -36,15 +37,15 @@ public class Create implements JSONSerializable {
         if (obj instanceof JSONObject) {
             message = (JSONObject) obj;
 
+            if (!message.containsKey("type"))
+                throw new InvalidObjectException("Relay needs a type.");
+            else if(!message.getString("type").equals(type))
+                throw new InvalidObjectException("Type is incorrectly specified for Relay cell.");
+
             if (!message.containsKey("circID"))
-                throw new InvalidObjectException("Create needs a circID.");
+                throw new InvalidObjectException("Relay needs an circID.");
             else
                 circID = message.getInt("circID");
-
-            if (!message.containsKey("gX"))
-                throw new InvalidObjectException("Create needs a gX.");
-            else
-                gX = message.getString("gX");
 
             if (message.size() > 2)
                 throw new InvalidObjectException("Superflous fields");
@@ -70,17 +71,17 @@ public class Create implements JSONSerializable {
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
 
+        obj.put("type", type);
         obj.put("circID", circID);
-        obj.put("gX", gX);
 
         return obj;
     }
 
-    public int getCircID() {
-        return circID;
+    public String getType() {
+        return type;
     }
 
-    public String getgX() {
-        return gX;
+    public int getCircID() {
+        return circID;
     }
 }

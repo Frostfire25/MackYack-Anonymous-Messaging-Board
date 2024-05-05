@@ -1,4 +1,4 @@
-package onionrouter_cells;
+package onionrouting.onionrouter_cells;
 
 import java.io.InvalidObjectException;
 
@@ -11,8 +11,9 @@ import merrimackutil.json.types.JSONType;
  * Sent from the first onion router to the client confirming the creation of a
  * circuit.
  */
-public class Created implements JSONSerializable {
+public class CreatedCell implements JSONSerializable {
 
+    private final String type = "CREATED";
     private String gY; // Base 64-encoded second half of Diffie-Hellman KEX.
     private String kHash; // Base 64-encoded SHA-3 256 hash: H(K || "handshake")
 
@@ -21,7 +22,7 @@ public class Created implements JSONSerializable {
      * 
      * @param obj a JSON object representing a Created cell.
      */
-    public Created(JSONObject obj) throws InvalidObjectException {
+    public CreatedCell(JSONObject obj) throws InvalidObjectException {
         deserialize(obj);
     }
 
@@ -37,6 +38,11 @@ public class Created implements JSONSerializable {
         if (obj instanceof JSONObject) {
             message = (JSONObject) obj;
 
+            if (!message.containsKey("type"))
+                throw new InvalidObjectException("Created needs a type.");
+            else if(!message.getString("type").equals(type))
+                throw new InvalidObjectException("Type is incorrectly specified for Created cell.");
+
             if (!message.containsKey("gY"))
                 throw new InvalidObjectException("Created needs a gY.");
             else
@@ -47,7 +53,7 @@ public class Created implements JSONSerializable {
             else
                 kHash = message.getString("kHash");
 
-            if (message.size() > 2)
+            if (message.size() > 3)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -71,10 +77,15 @@ public class Created implements JSONSerializable {
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
 
+        obj.put("type", type);
         obj.put("gY", gY);
         obj.put("kHash", kHash);
 
         return obj;
+    }
+
+    public String getType() {
+        return type;
     }
 
     public String getgY() {

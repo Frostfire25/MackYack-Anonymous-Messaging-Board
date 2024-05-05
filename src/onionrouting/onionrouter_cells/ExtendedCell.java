@@ -1,4 +1,4 @@
-package onionrouter_cells;
+package onionrouting.onionrouter_cells;
 
 import java.io.InvalidObjectException;
 
@@ -11,18 +11,17 @@ import merrimackutil.json.types.JSONType;
  * Sent from Client to the first OR in the circuit but forwarded to the last OR
  * in the circuit to extend the circuit by another node.
  */
-public class RelayExtend implements JSONSerializable {
+public class ExtendedCell implements JSONSerializable {
 
+    private final String type = "EXTENDED";
     private int circID;
-    private String addr; // Address of the OR to add to the circuit
-    private int port; // Port of the OR to add to the circuit
 
     /**
      * Construct a RelayExtend cell from the corresponding JSON object.
      * 
      * @param obj a JSON object representing a RelayExtend cell.
      */
-    public RelayExtend(JSONObject obj) throws InvalidObjectException {
+    public ExtendedCell(JSONObject obj) throws InvalidObjectException {
         deserialize(obj);
     }
 
@@ -38,22 +37,17 @@ public class RelayExtend implements JSONSerializable {
         if (obj instanceof JSONObject) {
             message = (JSONObject) obj;
 
+            if (!message.containsKey("type"))
+                throw new InvalidObjectException("Create needs a type.");
+            else if(!message.getString("type").equals(type))
+                throw new InvalidObjectException("Type is incorrectly specified for Extended cell.");
+
             if (!message.containsKey("circID"))
                 throw new InvalidObjectException("RelayExtend needs an circID.");
             else
                 circID = message.getInt("circID");
 
-            if (!message.containsKey("addr"))
-                throw new InvalidObjectException("RelayExtend needs a addr.");
-            else
-                addr = message.getString("addr");
-
-            if (!message.containsKey("port"))
-                throw new InvalidObjectException("RelayExtend needs a port.");
-            else
-                port = message.getInt("gX");
-
-            if (message.size() > 3)
+            if (message.size() > 2)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -77,22 +71,17 @@ public class RelayExtend implements JSONSerializable {
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
 
+        obj.put("type", type);
         obj.put("circID", circID);
-        obj.put("addr", addr);
-        obj.put("port", port);
 
         return obj;
     }
 
+    public String getType() {
+        return type;
+    }
+
     public int getCircID() {
         return circID;
-    }
-
-    public String getAddr() {
-        return addr;
-    }
-
-    public int getPort() {
-        return port;
     }
 }
