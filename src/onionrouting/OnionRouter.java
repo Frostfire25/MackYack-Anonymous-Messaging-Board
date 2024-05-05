@@ -1,11 +1,15 @@
 package onionrouting;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentHashMap;
 
 import merrimackutil.cli.LongOption;
 import merrimackutil.cli.OptionParser;
+import merrimackutil.json.JsonIO;
+import merrimackutil.util.Pair;
 import merrimackutil.util.Tuple;
 
 
@@ -98,7 +102,7 @@ public class OnionRouter
 
     /**
      * Loads the configuration file.
-     * @throws FileNotFoundException if the configuration file could not be found.
+     * @throws FileNotFoundException if the config file is not found.
      */
     public static void loadConfig() throws FileNotFoundException
     {
@@ -124,18 +128,59 @@ public class OnionRouter
     }
 
     /**
+     * Saves the configuration file.
+     */
+    public static void saveConfig() {
+        try
+        { 
+            if(configFile == null || configFile.isEmpty()) {
+                throw new FileNotFoundException("File config can not be empty for Onion Router. Please choose a specific router.");
+            }
+
+            JsonIO.writeSerializedObject(conf, new File(configFile));
+        }
+        catch(FileNotFoundException ex)
+        {
+            System.out.println(ex);
+            System.exit(1);
+        }
+    }
+
+    /**
      * The entry point
      * @param args the command line arguments.
      * @throws IOException 
      * @throws InterruptedException 
+     * @throws NoSuchAlgorithmException 
      */
-    public static void main(String[] args) throws InterruptedException, IOException
+    public static void main(String[] args) throws InterruptedException, IOException, NoSuchAlgorithmException
     {
     
         if (args.length > 2)
             usage();
 
         processArgs(args);
+
+        // Assure that this router has a pub/private key pair, 
+        // if not 
+        //  update the config, 
+        //  stop program, 
+        //  and print out public key.
+        if(conf.getPrivateKey() == null || conf.getPrivateKey().isEmpty()) {
+
+            Pair<String> keys = OnionRouterCrypto.generateAsymKeys();
+
+            conf.setPrivateKey(keys.getSecond());
+        
+            saveConfig();
+
+            System.out.println("Please update the corresponding routers.json table with the public key below.");
+            System.out.println(keys.getFirst());
+
+            // We don't care about our threads, just crudely shutdown.
+            System.exit(0);
+        }
+
 
         // Initialize the maps
         keyTable = new ConcurrentHashMap<>();

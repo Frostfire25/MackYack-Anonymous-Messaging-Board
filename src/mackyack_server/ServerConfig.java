@@ -94,4 +94,12 @@ public class ServerConfig implements JSONSerializable {
     public String getRoutersPath() {
         return routersPath;
     }
+
+    /**
+     * Modifiers
+     */
+
+     public void setPrivKey(String key) {
+        this.privKey = key;
+     }
 }

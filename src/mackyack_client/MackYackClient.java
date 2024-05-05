@@ -16,7 +16,8 @@ public class MackYackClient
     public static boolean doHelp = false;                       // True if help option present.
     private static ClientConfig conf = null;                    // The configuration information.
     private static String configFile = "client-config.json";    // Default configuration file.
-    
+    private static RoutersConfig routersConfig;
+
     /**
      * Prints the usage to the screen and exits.
      */
@@ -124,6 +125,8 @@ public class MackYackClient
             usage();
 
         processArgs(args); 
+
+        routersConfig = new RoutersConfig(conf.getRoutersPath());
 
         // TODO: Client implementation
         System.out.println("Mack Yack Client built successfully.");
