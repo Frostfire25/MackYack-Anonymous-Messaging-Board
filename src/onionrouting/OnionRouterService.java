@@ -76,7 +76,9 @@ public class OnionRouterService implements Runnable {
             // Run while the connection is alive in this circuit:
 
             // Read the type of the incoming cell
-            JSONObject obj = JsonIO.readObject(reader.readLine());
+            String msg = reader.readLine();
+            System.out.println("Incoming message: " + msg);
+            JSONObject obj = JsonIO.readObject(msg);
             if (!obj.containsKey("type")) {
                 System.err.println("Could not determine the type of the cell. Cell will be dropped");
                 return;
@@ -147,7 +149,8 @@ public class OnionRouterService implements Runnable {
     private void doRelay(RelayCell cell) {
         // 1. Check if it's incoming or outgoing. This is done by checking if it's in the inTable or outTable
         String circID = cell.getCircID();
-
+        System.out.println("Entered doRelay()");
+        
         // a. If it's incoming from Alice (i.e. the circID is in the inTable).
         if (OnionRouter.getInTable().containsKey(circID)) {
             // 1. Update the iv table with the iv we received. This will be used on the way back to Alice to encrypt.
@@ -199,6 +202,8 @@ public class OnionRouterService implements Runnable {
                 out.close();
 
                 System.out.println("Sent decrypted message to [" + addr + ":" + port + "].");
+                System.out.println("Message sent: ");
+                System.out.println(child.getFormattedJSON());
             } catch (Exception e) {
                 System.err.println("Error connecting to host: " + addr + ":" + port);
                 System.err.println(e);
@@ -249,6 +254,7 @@ public class OnionRouterService implements Runnable {
             }
         }
         // c. Else, drop it
+        System.out.println("Exited doRelay()");
     }
 
     /**
@@ -311,8 +317,12 @@ public class OnionRouterService implements Runnable {
         md.update("handshake".getBytes());
         String kHash = Base64.getEncoder().encodeToString(md.digest());
 
-        // 4. Store circID + key K in table
+        // 4. Store circID + key K in table. Also store incoming connection + circID in inTable
         OnionRouter.getKeyTable().put(cell.getCircID(), new SecretKeySpec(sharedSecret, "AES"));
+        String addr = inSock.getInetAddress().getHostAddress();
+        int port = inSock.getPort();
+        System.out.println("Added [" + addr + ":" + port + "] to inTable.");
+        OnionRouter.getInTable().put(cell.getCircID(), addr + ":" + port);
 
         System.out.println("sending Created message");
 
