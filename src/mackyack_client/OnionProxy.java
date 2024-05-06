@@ -15,6 +15,7 @@ import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
@@ -28,6 +29,8 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -78,7 +81,7 @@ public class OnionProxy {
         List<CreateCell> createCells = constructCreateCells();
 
         // Construct a list of messages (Relays) to initiate the circuit keys
-        List<JSONSerializable> create_and_relay_messages = createRelays(createCells);
+        createRelays(createCells);
 
         System.out.println(Arrays.toString(circuit.toArray()));
 
@@ -184,10 +187,29 @@ public class OnionProxy {
         md.update("handshake".getBytes());
         String kHash = Base64.getEncoder().encodeToString(md.digest());
 
-        // TODO, Update the Router with the Key? Not sure what kind of object this is
-        // - Alex
+        // Generate random IV
+        byte[] rawIV = new byte[16];                             // An AES init. vector.                                                                 // may have different specifications.
+        SecureRandom rand = new SecureRandom();
+        rand.nextBytes(rawIV);                                   // Fill array with random bytes.
+        
+        SecretKeySpec secretKeySpec = new SecretKeySpec(sharedSecret, "AES");
+
+        // Update the router with the correct information
+        router.setSymmetricKey(secretKeySpec);
+        router.setB64_IV(Base64.getEncoder().encodeToString(rawIV));
     }
 
+    /**
+     * Construct a message that is to be sent (onion)
+     * @param message
+     * @param server_addr
+     * @param port
+     */
+    public static void constructOperation(JSONSerializable message, String server_addr, int port) {
+
+
+
+    }
 
     /**
      * Construct all of the relay messages from each cell

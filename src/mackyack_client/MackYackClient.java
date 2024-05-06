@@ -4,10 +4,6 @@ import java.io.InvalidObjectException;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import java.security.Security;
-import java.util.Arrays;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 import merrimackutil.cli.LongOption;
 import merrimackutil.cli.OptionParser;
 import merrimackutil.util.Tuple;
