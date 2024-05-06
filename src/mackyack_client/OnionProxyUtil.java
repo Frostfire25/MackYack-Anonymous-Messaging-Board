@@ -5,9 +5,11 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
@@ -41,6 +43,28 @@ public class OnionProxyUtil {
 
         // Generate the PublicKey object using the KeyFactory
         return keyFactory.generatePublic(keySpec);
+    }
+
+        /**
+     * Decodes from Base64 encoding and returns Private Key object.
+     * 
+     * @param str base 64 encoding.
+     * @return Private Key object representation.
+     * @throws NoSuchAlgorithmException 
+     * @throws InvalidKeySpecException 
+     */
+    public static PrivateKey getPrivateKey(String algorithm, String str) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        // Decode the base64 encoded private key string
+        byte[] privateKeyBytes = Base64.getDecoder().decode(str);
+
+        // Create a PKCS8EncodedKeySpec object from the decoded bytes
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
+
+        // Get an instance of the KeyFactory for ElGamal algorithm
+        KeyFactory keyFactory = KeyFactory.getInstance(algorithm);
+
+        // Generate the PrivateKey object using the KeyFactory
+        return keyFactory.generatePrivate(keySpec);
     }
 
     /**

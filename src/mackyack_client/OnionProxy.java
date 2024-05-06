@@ -12,7 +12,9 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
@@ -21,6 +23,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -48,8 +52,8 @@ public class OnionProxy {
 
     private List<Router> circuit = new ArrayList<>();
 
-    // Represents the circuitID for entering the entry node
-    private int circID;
+    private KeyPairGenerator generator;
+    private KeyAgreement ecdhKex;
 
     public Router getEntryRouter() {
         return circuit.get(0);
@@ -62,10 +66,13 @@ public class OnionProxy {
     public OnionProxy(RoutersConfig routersConfig, ClientConfig conf) throws Exception {
         this.routersConfig = routersConfig;
         this.conf = conf;
-        this.circID = rand.nextInt();
 
         // Initialize the BCProvider
         Security.addProvider(new BouncyCastleProvider());
+
+        this.ecdhKex = KeyAgreement.getInstance("ECDH"); // Eliptic Curve Diffie-Hellman
+        this.generator = KeyPairGenerator.getInstance("EC"); // Generator for elliptic curves (this is our group)    
+        this.generator.initialize(256);
 
         // build the circuit
         constructCircuit();
@@ -137,7 +144,7 @@ public class OnionProxy {
 
                     // Protocol is to close the socket after a message has been handled.
                     sock.close();
-                } catch (IOException e) {
+                } catch (IOException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException e) {
                     e.printStackTrace();
                 }
             }
@@ -146,11 +153,42 @@ public class OnionProxy {
     }
 
     /**
+     * Find the associating router with circId {@code id}
+     * @param id
+     * @return
+     */
+    private Router findRouterWithCircId(int id) {
+        return circuit.stream().filter(n -> n.getCircuitId() == id).findFirst().orElse(null);
+    }
+
+    /**
      * Handles the created cell
      * @param createdCell
+     * @throws InvalidKeyException 
+     * @throws InvalidKeySpecException 
+     * @throws NoSuchAlgorithmException 
      */
-    private void handleCreated(CreatedCell createdCell) {
+    private void handleCreated(CreatedCell createdCell) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException {
+        // First, find the associating router with the createdCell ID
+        Router router = findRouterWithCircId(createdCell.getCircId());
+        
+        // 1. Generate the first half of the DH KEX.
+        PublicKey gYPubKey = OnionProxyUtil.getPublicKey("EC", createdCell.getgY());
+        String recvKHash = createdCell.getkHash();
 
+        // Do the DH magic.
+        ecdhKex.init(router.getGx());
+        ecdhKex.doPhase(gYPubKey, true);
+        byte[] sharedSecret = ecdhKex.generateSecret();
+
+        // 4. Get the kHash for ourselves, and assert.
+        MessageDigest md = MessageDigest.getInstance("SHA3-256");
+        md.update(sharedSecret);
+        md.update("handshake".getBytes());
+        String kHash = Base64.getEncoder().encodeToString(md.digest());
+
+        // TODO, Update the Router with the Key? Not sure what kind of object this is
+        // - Alex
     }
 
     /**
@@ -167,14 +205,14 @@ public class OnionProxy {
         relayCells.add(createCells.get(0));
         for(int i = 1; i < createCells.size(); i++) {
 
-            RelayCell relayCell = new RelayCell(circID, circuit.get(i).getAddr(), circuit.get(i).getPort(), (JSONObject) createCells.get(i).toJSONType());
+            RelayCell relayCell = new RelayCell(circuit.get(i).getCircuitId(), circuit.get(i).getAddr(), circuit.get(i).getPort(), (JSONObject) createCells.get(i).toJSONType());
 
             if( i > 1 ) {
                 // Loop through all of the Routers from 0 -> (i-2), and append them to the RelayCell
                 // This should only be ran if there are 2+ Relays to be made
                 for(int j = i - 1; j > 0; j--) {
                     // Create a new RelayCell wrapping 
-                    RelayCell newRelayCell = new RelayCell(circID, circuit.get(j).getAddr(), circuit.get(j).getPort(), (JSONObject) relayCell.toJSONType());
+                    RelayCell newRelayCell = new RelayCell(circuit.get(j).getCircuitId(), circuit.get(j).getAddr(), circuit.get(j).getPort(), (JSONObject) relayCell.toJSONType());
                     relayCell = newRelayCell;
                 }
             }
@@ -186,15 +224,16 @@ public class OnionProxy {
         return relayCells;
     }
 
+    /**
+     * Constructs a list of CreateCells
+     * @return
+     */
     private List<CreateCell> constructCreateCells() throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
         List<CreateCell> ret = new ArrayList<>();
 
         for(Router n : circuit) {
             // 1. Generate the first half of the DH KEX.
-            KeyAgreement ecdhKex = KeyAgreement.getInstance("ECDH"); // Eliptic Curve Diffie-Hellman
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("EC"); // Generator for elliptic curves (this is our group)    
-            generator.initialize(256);
-
+            
             // Generate the OR's contribution of the symmetric key.
             KeyPair pair = generator.generateKeyPair();
             byte[] gXBytes = pair.getPublic().getEncoded();
@@ -213,8 +252,10 @@ public class OnionProxy {
             //String B64_encrypted_sym_key = Base64.getEncoder().encodeToString(encrypted_sym_key);
             String B64_encrypted_sym_key = "";
 
+            n.setGx(pair.getPrivate());
+
             // 2. Send a CreateCell 
-            CreateCell cell = new CreateCell(symmetricKey_CipherText.getSecond(), circID, B64_encrypted_sym_key);
+            CreateCell cell = new CreateCell(symmetricKey_CipherText.getSecond(), rand.nextInt(), B64_encrypted_sym_key);
             ret.add(cell);
         }
 
