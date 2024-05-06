@@ -17,7 +17,7 @@ public class RelayCell implements JSONSerializable {
     private int circID; 
     private String base64_IV;
     //private String relaySecret;
-    private JSONObject relaySecret;
+    private String relaySecret;
 
     /**
      * Constructor
@@ -26,7 +26,7 @@ public class RelayCell implements JSONSerializable {
      * @param port
      * @param child
      */
-    public RelayCell(int circID, String base64_IV, JSONObject relaySecret) {
+    public RelayCell(int circID, String base64_IV, String relaySecret) {
         this.circID = circID;
         this.base64_IV = base64_IV;
         this.relaySecret = relaySecret;
@@ -66,7 +66,7 @@ public class RelayCell implements JSONSerializable {
             if (!message.containsKey("relaySecret"))
                 throw new InvalidObjectException("Relay needs an relaySecret.");
             else
-                relaySecret = message.getObject("relaySecret");
+                relaySecret = message.getString("relaySecret");
                 
             if (!message.containsKey("base64_IV"))
                 throw new InvalidObjectException("Relay needs an base64_IV.");
@@ -114,7 +114,7 @@ public class RelayCell implements JSONSerializable {
         return base64_IV;
     }
 
-    public JSONObject getRelaySecret() {
+    public String getRelaySecret() {
         return relaySecret;
     }
 }

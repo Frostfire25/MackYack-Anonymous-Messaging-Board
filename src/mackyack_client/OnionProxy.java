@@ -176,7 +176,16 @@ public class OnionProxy {
 
     private void handleRelay(RelayCell relayCell) {
         // If we receive a relay cell, it is wrapping either a CreatedCell or a DataCell.
-        
+
+        // Step 1 Decrypt Relay Secret
+        // How are we going to do this?
+        // Trivial, Go to the last OR in the circuit. Attempt to decrypt, 
+        //      If decrypted (the plaintext is JSONSearlizable)
+        //      Then handle the associating JSONSearlizable Cell, (type)
+        //  else
+        //      Go to the OR prior to the last one, attempt to decrypt
+        //  This is not a great way of handling.
+
     }
 
     /**
@@ -267,7 +276,9 @@ public class OnionProxy {
      * @throws UnknownHostException 
     */
 
-    private void sendCreateCells(List<CreateCell> createCells) throws UnknownHostException, IOException {
+    private int router_encrypted;
+
+    private void sendCreateCells(List<CreateCell> createCells) throws UnknownHostException, IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException {
 
         // Loop through every element in the circuit
         for(int i = 0; i < circuit.size(); i++) {
@@ -286,20 +297,22 @@ public class OnionProxy {
                     // Create the RelaySecret
                     RelaySecret secret = new RelaySecret(lastRouter.getAddr(), lastRouter.getPort(), (JSONObject) message.toJSONType());
 
-
                     // Encrypt the relay secret with this routers symmetric key
+                    String ciphertext = OnionProxyUtil.encryptSymmetric(secret.serialize(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
 
                     // Create a new RelayCell wrapping 
-                    RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), (JSONObject) secret.toJSONType());
+                    RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), ciphertext);
                     
                     // Encrypt this relay cell
                     message = newRelayCell;
                 }
             }
 
-            System.out.println(message.toJSONType().getFormattedJSON());
-            //send(message.serialize());
-            //pollProxy(false);
+            router_encrypted = i;
+
+            //System.out.println(message.toJSONType().getFormattedJSON());
+            send(message.serialize());
+            pollProxy(false);
         }
 
 
