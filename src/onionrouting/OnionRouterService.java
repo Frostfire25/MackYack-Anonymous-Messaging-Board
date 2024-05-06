@@ -169,6 +169,8 @@ public class OnionRouterService implements Runnable {
                 System.err.println(e);
             }
 
+            System.out.println("Decrypted secret.");
+
             // 3. Send the child to its destination
             String addr = secret.getAddr();
             int port = secret.getPort();
@@ -183,6 +185,8 @@ public class OnionRouterService implements Runnable {
                     // ii. outCircID -> inCircID in the askTable (for when we do the reverse direction).
                     OnionRouter.getOutTable().put(outCircID, addr + ":" + port);
                     OnionRouter.getAskTable().put(outCircID, circID);
+
+                    System.out.println("Create cell identified from this Relay cell: Added necessary info to outTable/askTable.");
                 }
             }
 
@@ -193,6 +197,8 @@ public class OnionRouterService implements Runnable {
                 out.write(child.toJSON());
                 out.newLine();
                 out.close();
+
+                System.out.println("Sent decrypted message to [" + addr + ":" + port + "].");
             } catch (Exception e) {
                 System.err.println("Error connecting to host: " + addr + ":" + port);
                 System.err.println(e);
