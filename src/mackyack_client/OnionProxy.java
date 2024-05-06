@@ -59,7 +59,7 @@ public class OnionProxy {
     private KeyPairGenerator generator;
     private KeyAgreement ecdhKex;
 
-    private Socket sock = null;     // Socket with the entrance node, will be null if it isn't being used
+    //private Socket sock = null;     // Socket with the entrance node, will be null if it isn't being used
 
     public Router getEntryRouter() {
         return circuit.get(0);
@@ -122,9 +122,6 @@ public class OnionProxy {
         writer.write(message);
         writer.newLine();
         writer.flush();
-
-        // Assign the socket
-        this.sock = sock;
     }
 
     private void pollProxy(boolean async) {
@@ -142,10 +139,13 @@ public class OnionProxy {
         while(true) {
             try {
                 System.out.println("Polling...");
-                BufferedReader reader = new BufferedReader(new InputStreamReader(this.sock.getInputStream()));
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.sock.getOutputStream()));
+                ServerSocket servSocket = new ServerSocket(conf.getPort());
+                Socket sock = servSocket.accept();
 
-                System.out.println("Connection accepted ["+this.sock.getInetAddress().getHostAddress()+":"+this.sock.getPort()+"]" );
+                BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
+
+                System.out.println("Connection accepted ["+sock.getInetAddress().getHostAddress()+":"+sock.getPort()+"]" );
 
                 // Determine if the packet is handled at the Proxy Layer or at the ApplicationService Layer
                 JSONObject obj = JsonIO.readObject(reader.readLine());
