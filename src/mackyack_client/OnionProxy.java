@@ -93,7 +93,7 @@ public class OnionProxy {
         //}
 
         // Poll for new messages on the proxy
-        //pollProxy();
+        pollProxy();
     }
 
     /**
@@ -197,8 +197,7 @@ public class OnionProxy {
             Router router = circuit.get(i);
 
             // Decrypt the child of the Relay message.
-            // String child = OnionProxyUtil.decryptSymmetric(message.getRelaySecret(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
-            String child = "";
+            String child = OnionProxyUtil.decryptSymmetric(message.getRelaySecret(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
 
             // Turn into a JSONObject
             JSONObject obj = JsonIO.readObject(child);
@@ -296,11 +295,11 @@ public class OnionProxy {
             // Create the RelaySecret
             RelaySecret secret = new RelaySecret(lastRouter.getAddr(), lastRouter.getPort(), (JSONObject) ret.toJSONType());
 
-            //// Encrypt the relay secret with this routers symmetric key
-            //String ciphertext = OnionProxyUtil.encryptSymmetric(secret.serialize(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
+            // Encrypt the relay secret with this routers symmetric key
+            String ciphertext = OnionProxyUtil.encryptSymmetric(secret.serialize(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
 
             // Create a new RelayCell wrapping 
-            RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), secret.toJSONType().getFormattedJSON());
+            RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), ciphertext);
             
             // Update ret and lastRouter
             ret = newRelayCell;
@@ -366,11 +365,11 @@ public class OnionProxy {
                     RelaySecret secret = new RelaySecret(lastRouter.getAddr(), lastRouter.getPort(), (JSONObject) message.toJSONType());
 
                     // Encrypt the relay secret with this routers symmetric key
-                    //String ciphertext = OnionProxyUtil.encryptSymmetric(secret.serialize(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
+                    String ciphertext = OnionProxyUtil.encryptSymmetric(secret.serialize(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
 
                     // Create a new RelayCell wrapping 
-                    //RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), ciphertext);
-                    RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), (JSONObject) secret.toJSONType());
+                    // - DEBUG - RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), (JSONObject) secret.toJSONType());
+                    RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), ciphertext);
 
                     // Update the message and lastRouter
                     message = newRelayCell;
