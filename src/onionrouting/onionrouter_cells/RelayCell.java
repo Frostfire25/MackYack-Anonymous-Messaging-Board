@@ -15,6 +15,8 @@ public class RelayCell implements JSONSerializable {
 
     private final String type = "RELAY";
     private int circID;
+    private String addr;
+    private int port;
 
     /**
      * Construct a RelayExtend cell from the corresponding JSON object.

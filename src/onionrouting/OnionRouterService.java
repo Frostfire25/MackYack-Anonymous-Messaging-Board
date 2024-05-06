@@ -47,7 +47,8 @@ public class OnionRouterService implements Runnable {
     private Socket inSock;                                // The incoming socket connection to this OR.
     private Socket outSock;                               // The outgoing socket connection from this OR.
     private ConcurrentHashMap<Integer, Key> keyTable;     // The table used to find symmetric keys based on.
-    private ConcurrentHashMap<String, Integer> fwdTable;  // The table used to find the next circID in the chain based on IP/port combinations.
+    private ConcurrentHashMap<Integer, Integer> circIDAssociation; // Incoming circIDs -> Outgoing circIDs.
+    private ConcurrentHashMap<Integer, String> revTable;  // Incoming circIDs -> Incoming OR IP/port combos.
     private PrivateKey privKey;                           // The private key for this OR.
 
     /**
@@ -263,16 +264,16 @@ public class OnionRouterService implements Runnable {
 
     /**
      * Performs all the operations to be done on an Extend cell when received.
+     * 
+     * Steps:
+     *  1. Come up with a circID for the next node.
+     *  2. Send Create(newCirdID) to specified IP/port combo
+     * 
      * @param cell cell we're performing the operation on.
      */
     private void doExtend(ExtendCell cell) {
-        // TODO: EXTEND
-        
-        /*
-         * Steps:
-         *  1. Come up with a circID for the next node.
-         *  2. Send Create(newCirdID) to specified IP/port combo
-         */
+        // 1. Come up with a new circID
+        int newCircID = (int)(Math.random() * Integer.MAX_VALUE);
     }
 
 
