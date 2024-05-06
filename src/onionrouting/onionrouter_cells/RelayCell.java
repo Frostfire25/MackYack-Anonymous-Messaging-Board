@@ -14,7 +14,7 @@ import merrimackutil.json.types.JSONType;
 public class RelayCell implements JSONSerializable {
 
     private final String type = "RELAY";
-    private int circID; 
+    private String circID; 
     private String base64_IV;
     private String relaySecret;
 
@@ -25,7 +25,7 @@ public class RelayCell implements JSONSerializable {
      * @param port
      * @param child
      */
-    public RelayCell(int circID, String base64_IV, String relaySecret) {
+    public RelayCell(String circID, String base64_IV, String relaySecret) {
         this.circID = circID;
         this.base64_IV = base64_IV;
         this.relaySecret = relaySecret;
@@ -60,7 +60,7 @@ public class RelayCell implements JSONSerializable {
             if (!message.containsKey("circID"))
                 throw new InvalidObjectException("Relay needs an circID.");
             else
-                circID = message.getInt("circID");
+                circID = message.getString("circID");
 
             if (!message.containsKey("relaySecret"))
                 throw new InvalidObjectException("Relay needs an relaySecret.");
@@ -105,7 +105,7 @@ public class RelayCell implements JSONSerializable {
     }
 
 
-    public int getCircID() {
+    public String getCircID() {
         return circID;
     }
 

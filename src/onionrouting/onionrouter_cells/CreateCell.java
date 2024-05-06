@@ -13,7 +13,7 @@ import merrimackutil.json.types.JSONType;
 public class CreateCell implements JSONSerializable {
 
     private final String type = "CREATE";
-    private int circID;
+    private String circID; // UUID
     private String gX; // Base 64-encoded first half of Diffie-Hellman KEX encrypted in the ephemeral key.
     private String encryptedSymKey; // Base 64-encoded ephemeral key (symmetric) encrypted in the OR's public key.
 
@@ -24,7 +24,7 @@ public class CreateCell implements JSONSerializable {
      * @param circID circuit ID
      * @param Encrypted Symmetric Key used to decrypt gX
      */
-    public CreateCell(String gX, int circID, String encyptedSymKey) {
+    public CreateCell(String gX, String circID, String encyptedSymKey) {
         this.gX = gX;
         this.circID = circID;
         this.encryptedSymKey = encyptedSymKey;
@@ -59,7 +59,7 @@ public class CreateCell implements JSONSerializable {
             if (!message.containsKey("circID"))
                 throw new InvalidObjectException("Create needs a circID.");
             else
-                circID = message.getInt("circID");
+                circID = message.getString("circID");
 
             if (!message.containsKey("gX"))
                 throw new InvalidObjectException("Create needs a gX.");
@@ -108,7 +108,7 @@ public class CreateCell implements JSONSerializable {
         return type;
     }
 
-    public int getCircID() {
+    public String getCircID() {
         return circID;
     }
 

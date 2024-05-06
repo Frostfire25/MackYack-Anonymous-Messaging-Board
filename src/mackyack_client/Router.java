@@ -91,7 +91,7 @@ public class Router implements JSONSerializable {
      * Non-Stored code-bits regarding what we know about a Router
      */
     
-    private int circuitId;
+    private String circuitId; // UUID
     private PrivateKey gx;
     private Key symmetricKey;
     private String b64_IV;
@@ -104,7 +104,7 @@ public class Router implements JSONSerializable {
         this.b64_IV = b64_IV;
     }
 
-    public int getCircuitId() {
+    public String getCircuitId() {
         return circuitId;
     }
 
@@ -116,7 +116,7 @@ public class Router implements JSONSerializable {
         this.symmetricKey = symmetricKey;
     }
 
-    public void setCircuitId(int circuitId) {
+    public void setCircuitId(String circuitId) {
         this.circuitId = circuitId;
     }
 

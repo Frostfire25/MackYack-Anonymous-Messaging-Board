@@ -25,6 +25,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -190,8 +192,8 @@ public class OnionProxy {
      * @param id
      * @return
      */
-    private Router findRouterWithCircId(int id) {
-        return circuit.stream().filter(n -> n.getCircuitId() == id).findFirst().orElse(null);
+    private Router findRouterWithCircId(String circId) {
+        return circuit.stream().filter(n -> n.getCircuitId().equalsIgnoreCase(circId)).findFirst().orElse(null);
     }
 
     private void handleRelay(RelayCell relayCell) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidObjectException, InvalidKeySpecException {
@@ -439,7 +441,7 @@ public class OnionProxy {
             n.setGx(pair.getPrivate());
 
             // Get the circuit ID
-            int circID = rand.nextInt();
+            String circID = UUID.randomUUID().toString();
             n.setCircuitId(circID);
 
             // 2. Send a CreateCell 

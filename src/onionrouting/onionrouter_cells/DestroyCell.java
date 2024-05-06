@@ -14,7 +14,7 @@ import merrimackutil.json.types.JSONType;
 public class DestroyCell implements JSONSerializable {
 
     private final String type = "DESTROY";
-    private int circID;
+    private String circID;
 
     /**
      * Construct a Destroy cell from the corresponding JSON object.
@@ -45,7 +45,7 @@ public class DestroyCell implements JSONSerializable {
             if (!message.containsKey("circID"))
                 throw new InvalidObjectException("Destroy needs a circID.");
             else
-                circID = message.getInt("circID");
+                circID = message.getString("circID");
 
             if (message.size() > 2)
                 throw new InvalidObjectException("Superflous fields");
@@ -81,7 +81,7 @@ public class DestroyCell implements JSONSerializable {
         return type;
     }
 
-    public int getCircID() {
+    public String getCircID() {
         return circID;
     }
 }

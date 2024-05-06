@@ -146,7 +146,7 @@ public class OnionRouterService implements Runnable {
      */
     private void doRelay(RelayCell cell) {
         // 1. Check if it's incoming or outgoing. This is done by checking if it's in the inTable or outTable
-        int circID = cell.getCircID();
+        String circID = cell.getCircID();
 
         // a. If it's incoming from Alice (i.e. the circID is in the inTable).
         if (OnionRouter.getInTable().containsKey(circID)) {
