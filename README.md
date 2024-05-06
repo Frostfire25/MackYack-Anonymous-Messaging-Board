@@ -20,7 +20,7 @@ The `OnionProxy` class serves as a Proxy within an Onion Routing Network, facili
 ### `public OnionProxy(RoutersConfig routersConfig, ClientConfig conf) throws Exception`
 This constructor initializes the Onion Routing System. It requires configurations for routers and clients. Upon instantiation, it constructs the circuit, generates create cells for each OR, sends create cells to initiate circuit keys, and starts polling for new messages on the proxy.
 
-### `public void send(String message) throws UnknownHostException, IOException`
+### `public void send(String message) `
 This method sends a string message to the entrance Onion Router. It establishes a socket connection and transmits the message.
 
 ### `private void pollProxy()`
@@ -32,22 +32,22 @@ Handles a received JSON object, determining whether it should be handled at the 
 ### `private Router findRouterWithCircId(int id)`
 Finds the router associated with the specified circuit ID.
 
-### `private void handleRelay(RelayCell relayCell) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidObjectException, InvalidKeySpecException`
+### `private void handleRelay(RelayCell relayCell) `
 Handles a relay cell received from an Onion Router. Decrypts the relay secret and handles the associated JSON serializable cell.
 
-### `private void handleCreated(CreatedCell createdCell) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException`
+### `private void handleCreated(CreatedCell createdCell) `
 Handles a created cell received from an Onion Router. Generates the first half of the DH Key Exchange and updates router information with the symmetric key.
 
-### `public JSONSerializable constructOperation(JSONSerializable message, String server_addr, int port) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException`
+### `public JSONSerializable constructOperation(JSONSerializable message, String server_addr, int port) `
 Constructs a message to be sent, wrapping it in relays from the last router in the circuit to the entry node.
 
-### `private void sendCreateCells(List<CreateCell> createCells) throws UnknownHostException, IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException`
+### `private void sendCreateCells(List<CreateCell> createCells) `
 Sends create cells to each router in the circuit, encrypting and wrapping them in relays as necessary.
 
-### `private List<CreateCell> constructCreateCells() throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException`
+### `private List<CreateCell> constructCreateCells() `
 Constructs create cells for each router in the circuit, generating the first half of the DH Key Exchange and encrypting symmetric keys.
 
-### `private void constructCircuit() throws Exception`
+### `private void constructCircuit() `
 Constructs the circuit from the provided router configuration, selecting a specified number of routers as Onion Routers.
 
 
