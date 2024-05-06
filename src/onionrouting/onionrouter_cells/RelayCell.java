@@ -14,10 +14,9 @@ import merrimackutil.json.types.JSONType;
 public class RelayCell implements JSONSerializable {
 
     private final String type = "RELAY";
-    private int circID;
-    private String addr;
-    private int port;
-    private String child; // Represented as a JSONObject
+    private int circID; 
+    private String base64_IV;
+    private String relaySecret;
 
     /**
      * Constructor
@@ -26,11 +25,10 @@ public class RelayCell implements JSONSerializable {
      * @param port
      * @param child
      */
-    public RelayCell(int circID, String addr, int port, String child) {
+    public RelayCell(int circID, String base64_IV, String relaySecret) {
         this.circID = circID;
-        this.addr = addr;
-        this.port = port;
-        this.child = child;
+        this.base64_IV = base64_IV;
+        this.relaySecret = relaySecret;
     }
 
     /**
@@ -64,22 +62,17 @@ public class RelayCell implements JSONSerializable {
             else
                 circID = message.getInt("circID");
 
-            if (!message.containsKey("port"))
-                throw new InvalidObjectException("Relay needs an port.");
+            if (!message.containsKey("relaySecret"))
+                throw new InvalidObjectException("Relay needs an relaySecret.");
             else
-                port = message.getInt("port");
-
-            if (!message.containsKey("addr"))
-                throw new InvalidObjectException("Relay needs a addr.");
-            else 
-                addr = message.getString("addr");
-
-            if (!message.containsKey("child"))
-                throw new InvalidObjectException("Relay needs a child.");
-            else 
-                child = message.getString("child");
-
-            if (message.size() > 6)
+                relaySecret = message.getString("relaySecret");
+                
+            if (!message.containsKey("base64_IV"))
+                throw new InvalidObjectException("Relay needs an base64_IV.");
+            else
+                base64_IV = message.getString("base64_IV");
+                
+            if (message.size() > 4)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -105,9 +98,8 @@ public class RelayCell implements JSONSerializable {
 
         obj.put("type", type);
         obj.put("circID", circID);
-        obj.put("addr", addr);
-        obj.put("port", port);
-        obj.put("child", child);
+        obj.put("base64_IV", base64_IV);
+        obj.put("relaySecret", relaySecret);
 
         return obj;
     }
@@ -117,15 +109,11 @@ public class RelayCell implements JSONSerializable {
         return circID;
     }
 
-    public String getAddr() {
-        return addr;
+    public String getIV() {
+        return base64_IV;
     }
 
-    public int getPort() {
-        return port;
-    }
-
-    public String getChild() {
-        return child;
+    public String getRelaySecret() {
+        return relaySecret;
     }
 }

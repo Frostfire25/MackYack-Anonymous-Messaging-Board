@@ -15,6 +15,7 @@ import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
@@ -23,14 +24,13 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -81,7 +81,7 @@ public class OnionProxy {
         List<CreateCell> createCells = constructCreateCells();
 
         // Construct a list of messages (Relays) to initiate the circuit keys
-        List<JSONSerializable> create_and_relay_messages = createRelays(createCells);
+        createRelays(createCells);
 
         System.out.println(Arrays.toString(circuit.toArray()));
 
@@ -102,7 +102,7 @@ public class OnionProxy {
      * @throws UnknownHostException
      * @throws IOException
      */
-    public void send(JSONSerializable message) throws UnknownHostException, IOException {
+    public void send(String message) throws UnknownHostException, IOException {
         // We can only send to the entrance node in a OR scheme.
         // So that's what we'll do
         Router en_Router = getEntryRouter();
@@ -110,7 +110,7 @@ public class OnionProxy {
         Socket sock = new Socket(en_Router.getAddr(), en_Router.getPort());
         BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
-        writer.write(message.serialize());
+        writer.write(message);
         writer.newLine();
         writer.flush();
     }
@@ -187,8 +187,28 @@ public class OnionProxy {
         md.update("handshake".getBytes());
         String kHash = Base64.getEncoder().encodeToString(md.digest());
 
-        // TODO, Update the Router with the Key? Not sure what kind of object this is
-        // - Alex
+        // Generate random IV
+        byte[] rawIV = new byte[16];                             // An AES init. vector.                                                                 // may have different specifications.
+        SecureRandom rand = new SecureRandom();
+        rand.nextBytes(rawIV);                                   // Fill array with random bytes.
+        
+        SecretKeySpec secretKeySpec = new SecretKeySpec(sharedSecret, "AES");
+
+        // Update the router with the correct information
+        router.setSymmetricKey(secretKeySpec);
+        router.setB64_IV(Base64.getEncoder().encodeToString(rawIV));
+    }
+
+    /**
+     * Construct a message that is to be sent (onion)
+     * @param message
+     * @param server_addr
+     * @param port
+     */
+    public static void constructOperation(JSONSerializable message, String server_addr, int port) {
+
+
+
     }
 
     /**
@@ -239,18 +259,17 @@ public class OnionProxy {
             byte[] gXBytes = pair.getPublic().getEncoded();
             
             // Initialize the Cipher for encryption
-            //Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding");
-            //cipher.init(Cipher.ENCRYPT_MODE, OnionProxyUtil.getPublicKey("ElGamal", n.getPublicKey()));
+            Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, OnionProxyUtil.getPublicKey("ElGamal", n.getPublicKey()));
 
             // Pair of <SymmetricKey:IV> & <Cipher text of Symmetric Encrypted g^x as bytes.
             Pair<String> symmetricKey_CipherText = OnionProxyUtil.encryptHybrid(gXBytes);
 
             // Encrypt the symmetricKey_CipherText Key+IV
-            //byte[] encrypted_sym_key = cipher.doFinal(symmetricKey_CipherText.getFirst().getBytes());
+            byte[] encrypted_sym_key = cipher.doFinal(symmetricKey_CipherText.getFirst().getBytes());
 
             // B64_Encrypted SYM Key
-            //String B64_encrypted_sym_key = Base64.getEncoder().encodeToString(encrypted_sym_key);
-            String B64_encrypted_sym_key = "";
+            String B64_encrypted_sym_key = Base64.getEncoder().encodeToString(encrypted_sym_key);
 
             n.setGx(pair.getPrivate());
 
