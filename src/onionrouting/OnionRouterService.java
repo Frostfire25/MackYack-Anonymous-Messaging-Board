@@ -62,7 +62,6 @@ public class OnionRouterService implements Runnable {
         this.inSock = inSock;
         this.outSock = null;
         this.keyTable = keyTable;
-        this.fwdTable = fwdTable;
         this.privKey = privKey;
         // Initialize the BCProvider
         Security.addProvider(new BouncyCastleProvider());

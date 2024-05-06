@@ -2,6 +2,9 @@
 
 ## MackYack Protocol
 
+### OnionProxy
+ 
+
 ### Client Functionality
 ---
 - Message is sent to the server, where it is added to the MackYack board.

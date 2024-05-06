@@ -75,5 +75,9 @@ public class RoutersConfig implements JSONSerializable {
         object.put("routers", routers);
         return object;
     }
+
+    public List<Router> getRouters() {
+        return routers;
+    }
     
 }

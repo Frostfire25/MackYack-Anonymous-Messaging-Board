@@ -79,5 +79,10 @@ public class Router implements JSONSerializable {
     public String getPublicKey() {
         return publicKey;
     }
+
+    @Override
+    public String toString() {
+        return addr +":"+port;
+    }
     
 }
