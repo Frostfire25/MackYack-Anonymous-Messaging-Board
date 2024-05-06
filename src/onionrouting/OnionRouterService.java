@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Base64;
+import java.net.InetSocketAddress;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -50,6 +51,8 @@ import org.bouncycastle.util.encoders.Base64Encoder;
 public class OnionRouterService implements Runnable {
 
     private Socket inSock; // The incoming socket connection to this OR.
+    private String inSockAddr; // The incoming socket's address.
+    private int inSockPort; // The incoming socket's port.
 
     /**
      * Constructor for the threaded service implementation of the OnionRouter. This
@@ -59,6 +62,8 @@ public class OnionRouterService implements Runnable {
      */
     public OnionRouterService(Socket inSock) {
         this.inSock = inSock;
+        this.inSockAddr = inSock.getInetAddress().getHostAddress();
+        this.inSockPort = inSock.getPort();
 
         // Initialize the BCProvider
         Security.addProvider(new BouncyCastleProvider());
@@ -71,7 +76,6 @@ public class OnionRouterService implements Runnable {
             System.out.println("thread started");
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(inSock.getInputStream()));
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(inSock.getOutputStream()));
 
             // Run while the connection is alive in this circuit:
 
@@ -83,6 +87,8 @@ public class OnionRouterService implements Runnable {
                 System.err.println("Could not determine the type of the cell. Cell will be dropped");
                 return;
             }
+
+            inSock.close();
 
             String type = obj.getString("type");
 
@@ -99,7 +105,7 @@ public class OnionRouterService implements Runnable {
                         CreateCell createCell = new CreateCell(obj);
 
                         try {
-                            doCreate(createCell, writer);
+                            doCreate(createCell);
                         } catch (Exception e) {
                             System.err.println("Could not complete DH KEX with Alice properly.");
                             System.err.println(e);
@@ -117,23 +123,15 @@ public class OnionRouterService implements Runnable {
                         break;
                     default:
                         System.err.println("Unknown cell type. Closing socket...");
-                        inSock.close();
 
                         break;
                 }
-                inSock.close();
             } catch (InvalidObjectException ex) {
                 System.err.println("Invalid Object parsed.");
                 System.err.println(ex.getMessage());
-                inSock.close();
             }
         } catch (IOException e) {
             e.printStackTrace();
-            try {
-                inSock.close();
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
         }
     }
 
@@ -194,21 +192,10 @@ public class OnionRouterService implements Runnable {
             }
 
             // b. Actually send to the socket.
-            try (Socket outSock = new Socket(addr, port)) {
-                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(outSock.getOutputStream()));
-
-                out.write(child.toJSON());
-                out.newLine();
-                out.close();
-
-                System.out.println("Sent decrypted message to [" + addr + ":" + port + "].");
-                System.out.println("Message sent: ");
-                System.out.println(child.getFormattedJSON());
-            } catch (Exception e) {
-                System.err.println("Error connecting to host: " + addr + ":" + port);
-                System.err.println(e);
-            }
-
+            sendToDestination(child.toJSON(), addr, port);
+            System.out.println("Sent decrypted message to [" + addr + ":" + port + "].");
+            System.out.println("Message sent: ");
+            System.out.println(child.getFormattedJSON());
         }
         // b. If it's returning TO Alice (i.e. the circID is in the outTable).
         else if (OnionRouter.getOutTable().containsKey(circID)) {
@@ -241,17 +228,7 @@ public class OnionRouterService implements Runnable {
 
             // 5. Package it in a RelayCell, and send it off
             RelayCell retCell = new RelayCell(thisCircID, iv, ctextSecret);
-
-            try (Socket retSock = new Socket(addr, port)) {
-                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(retSock.getOutputStream()));
-
-                out.write(retCell.serialize());
-                out.newLine();
-                out.close();
-            } catch (Exception e) {
-                System.err.println("Error connecting to host: " + addr + ":" + port);
-                System.err.println(e);
-            }
+            sendToDestination(retCell.serialize(), addr, port);
         }
         // c. Else, drop it
         System.out.println("Exited doRelay()");
@@ -271,7 +248,7 @@ public class OnionRouterService implements Runnable {
      * @param cell cell we're performing the operation on.
      * @throws IOException
      */
-    private void doCreate(CreateCell cell, BufferedWriter output) throws NoSuchAlgorithmException,
+    private void doCreate(CreateCell cell) throws NoSuchAlgorithmException,
             InvalidKeyException, InvalidKeySpecException, IOException {
         
         System.out.println("do create start");
@@ -284,9 +261,7 @@ public class OnionRouterService implements Runnable {
         // with all empty fields and return.
         if (gX == null) {
             CreatedCell retCell = new CreatedCell("", "", "");
-            output.write(retCell.serialize());
-            output.newLine();
-            output.close();
+            sendToDestination(retCell.serialize(), inSockAddr, inSockPort);
             return;
         }
 
@@ -319,18 +294,14 @@ public class OnionRouterService implements Runnable {
 
         // 4. Store circID + key K in table. Also store incoming connection + circID in inTable
         OnionRouter.getKeyTable().put(cell.getCircID(), new SecretKeySpec(sharedSecret, "AES"));
-        String addr = inSock.getInetAddress().getHostAddress();
-        int port = inSock.getPort();
-        System.out.println("Added [" + addr + ":" + port + "] to inTable.");
-        OnionRouter.getInTable().put(cell.getCircID(), addr + ":" + port);
+        System.out.println("Added [" + inSockAddr + ":" + inSockPort + "] to inTable.");
+        OnionRouter.getInTable().put(cell.getCircID(), inSockAddr + ":" + inSockPort);
 
         System.out.println("sending Created message");
 
         // Package in CreatedCell and return it back.
         CreatedCell retCell = new CreatedCell(gY, kHash, cell.getCircID());
-        output.write(retCell.serialize());
-        output.newLine();
-        output.close();
+        sendToDestination(retCell.serialize(), inSockAddr, inSockPort);
         
         System.out.println("Created message sent");
     }
@@ -465,6 +436,37 @@ public class OnionRouterService implements Runnable {
             System.err.println("Error decrypting gX from CreateCell.");
             System.err.println(e);
             return null;
+        }
+    }
+
+
+    /**
+     * Sends a message to a particular IP/port combo bound on this OR's port.
+     * 
+     * @param msg Message to send.
+     * @param addr Address to send to.
+     * @param port Port to send to.
+     */
+    private void sendToDestination(String msg, String addr, int port) {
+        try {
+            // Create a socket and bind it to the specified port
+            Socket socket = new Socket();
+            socket.bind(new InetSocketAddress(OnionRouter.getPort()));
+
+            // Connect the socket to the remote server
+            socket.connect(new InetSocketAddress(addr, port));
+
+            // Send it out
+            BufferedWriter output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+            output.write(msg);
+            output.newLine();
+            output.close();
+            
+            // Close the socket when done
+            socket.close();
+        } catch (IOException e) {
+            System.err.println("Could not send message to: [" + addr + ":" + port + "].");
+            e.printStackTrace();
         }
     }
 
