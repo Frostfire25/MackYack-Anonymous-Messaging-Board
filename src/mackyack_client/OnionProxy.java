@@ -277,10 +277,9 @@ public class OnionProxy {
      * @param port
      */
     public static void constructOperation(JSONSerializable message, String server_addr, int port) {
-
+        // Wrap the operation in Relays.
+        // This is quite simple
     }
-
-
 
     /**
      * Construct all of the relay messages from each cell
@@ -318,8 +317,6 @@ public class OnionProxy {
      * @throws UnknownHostException 
     */
 
-    private int router_encrypted;
-
     private void sendCreateCells(List<CreateCell> createCells) throws UnknownHostException, IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException {
 
         // Loop through every element in the circuit
@@ -349,8 +346,6 @@ public class OnionProxy {
                     message = newRelayCell;
                 }
             }
-
-            router_encrypted = i;
 
             //System.out.println(message.toJSONType().getFormattedJSON());
             send(message.serialize());
