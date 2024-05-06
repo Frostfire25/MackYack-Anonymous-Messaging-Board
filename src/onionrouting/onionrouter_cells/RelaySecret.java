@@ -6,8 +6,8 @@ import merrimackutil.json.JSONSerializable;
 import merrimackutil.json.types.JSONObject;
 import merrimackutil.json.types.JSONType;
 
-/*
- * This is always encrypted by default in a Relay Cell
+/**
+ * This element becomes secret (encrypted)
  */
 public class RelaySecret implements JSONSerializable {
 

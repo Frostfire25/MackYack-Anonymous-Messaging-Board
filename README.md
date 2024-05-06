@@ -16,29 +16,39 @@ The `OnionProxy` class serves as a Proxy within an Onion Routing Network, facili
 
 #### Methods
 
-### `public OnionProxy(RoutersConfig routersConfig, ClientConfig conf) throws Exception`
-This constructor initializes the Onion Routing System. It requires configurations for routers and clients. Upon instantiation, it constructs the circuit, generates relay messages to initiate circuit keys, and starts polling for new messages on the proxy.
 
-### `public void send(JSONSerializable message) throws UnknownHostException, IOException`
-This method sends a message to the Entrance Onion Router. It takes a `JSONSerializable` message and transmits it to the entry node in the onion routing scheme.
+### `public OnionProxy(RoutersConfig routersConfig, ClientConfig conf) throws Exception`
+This constructor initializes the Onion Routing System. It requires configurations for routers and clients. Upon instantiation, it constructs the circuit, generates create cells for each OR, sends create cells to initiate circuit keys, and starts polling for new messages on the proxy.
+
+### `public void send(String message) `
+This method sends a string message to the entrance Onion Router. It establishes a socket connection and transmits the message.
 
 ### `private void pollProxy()`
-By starting a server socket in a separate thread, this method continuously polls for new messages on the proxy. Messages are routed either to the Proxy Layer or the ApplicationService Layer for handling.
+Initiates the polling mechanism for new messages on the proxy.
 
-### `private void handleCreated(CreatedCell createdCell)`
-Upon receiving a created cell from the Onion Router, this method handles it appropriately.
+### `private void handJSONObject(JSONObject obj)`
+Handles a received JSON object, determining whether it should be handled at the Proxy Layer or at the ApplicationService Layer.
 
-### `private List<JSONSerializable> createRelays(List<CreateCell> createCells)`
-For each cell, this method constructs relay messages to be sent to the entry node. Each CreateCell corresponds to a router in the circuit.
+### `private Router findRouterWithCircId(int id)`
+Finds the router associated with the specified circuit ID.
 
-### `private List<CreateCell> constructCreateCells() throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException`
-This method builds CreateCells for each router in the circuit. It generates the first half of the Diffie-Hellman Key Exchange, encrypts it, and creates a CreateCell.
+### `private void handleRelay(RelayCell relayCell) `
+Handles a relay cell received from an Onion Router. Decrypts the relay secret and handles the associated JSON serializable cell.
 
-### `private void constructCircuit() throws Exception`
-By shuffling and selecting a specified number of routers from the provided configuration, this method constructs the circuit for the Onion Routing System.
+### `private void handleCreated(CreatedCell createdCell) `
+Handles a created cell received from an Onion Router. Generates the first half of the DH Key Exchange and updates router information with the symmetric key.
 
-### `public Router getEntryRouter()`
-This method returns the entry router of the circuit, facilitating access to the starting point of the communication pathway.
+### `public JSONSerializable constructOperation(JSONSerializable message, String server_addr, int port) `
+Constructs a message to be sent, wrapping it in relays from the last router in the circuit to the entry node.
+
+### `private void sendCreateCells(List<CreateCell> createCells) `
+Sends create cells to each router in the circuit, encrypting and wrapping them in relays as necessary.
+
+### `private List<CreateCell> constructCreateCells() `
+Constructs create cells for each router in the circuit, generating the first half of the DH Key Exchange and encrypting symmetric keys.
+
+### `private void constructCircuit() `
+Constructs the circuit from the provided router configuration, selecting a specified number of routers as Onion Routers.
 
 
 ### Server Functionality

@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.InvalidObjectException;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -40,7 +41,9 @@ import merrimackutil.json.types.JSONObject;
 import merrimackutil.util.Pair;
 import onionrouting.onionrouter_cells.CreateCell;
 import onionrouting.onionrouter_cells.CreatedCell;
+import onionrouting.onionrouter_cells.DataCell;
 import onionrouting.onionrouter_cells.RelayCell;
+import onionrouting.onionrouter_cells.RelaySecret;
 
 public class OnionProxy {
 
@@ -81,13 +84,13 @@ public class OnionProxy {
         List<CreateCell> createCells = constructCreateCells();
 
         // Construct a list of messages (Relays) to initiate the circuit keys
-        createRelays(createCells);
+        sendCreateCells(createCells);
 
         System.out.println(Arrays.toString(circuit.toArray()));
 
-        for(JSONSerializable n : create_and_relay_messages) {
-            System.out.println(n.toJSONType().getFormattedJSON());
-        }
+        //for(JSONSerializable n : create_and_relay_messages) {
+        //    System.out.println(n.toJSONType().getFormattedJSON());
+        //}
 
         // Poll for new messages on the proxy
         pollProxy();
@@ -116,40 +119,48 @@ public class OnionProxy {
     }
 
     private void pollProxy() {
-        // Start the server socket in a separate thread
-        Thread serverThread = new Thread(() -> {
-            while(true) {
-                try {
-                    ServerSocket serverSocket = new ServerSocket(conf.getPort());
-                    Socket sock = serverSocket.accept();
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
+        poll();
+    }
 
-                    // Determine if the packet is handled at the Proxy Layer or at the ApplicationService Layer
-                    JSONObject obj = JsonIO.readObject(reader.readLine());
+    private void poll() {
+        while(true) {
+            try {
+                ServerSocket serverSocket = new ServerSocket(conf.getPort());
+                Socket sock = serverSocket.accept();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
 
-                    if(obj.containsKey("type")) {
-                        // TODO
-                        // If this is a CreatedCell, then handle.
-                        switch(obj.getString("type")) {
-                            case "CREATED": {
-                                handleCreated(new CreatedCell(obj));
-                            }; break;
-                        }
-                        // ?
-                    } else {
-                        ApplicationService.handle(obj);
-                    }
-
-
-                    // Protocol is to close the socket after a message has been handled.
-                    sock.close();
-                } catch (IOException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException e) {
-                    e.printStackTrace();
-                }
+                // Determine if the packet is handled at the Proxy Layer or at the ApplicationService Layer
+                JSONObject obj = JsonIO.readObject(reader.readLine());
+                handJSONObject(obj);
+                // Protocol is to close the socket after a message has been handled.
+                sock.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        });
-        serverThread.start(); // Start the server thread
+        }
+    }
+    private void handJSONObject(JSONObject obj) {
+        try {
+            if(obj.containsKey("type")) {
+                // TODO
+                // If this is a CreatedCell, then handle.
+                switch(obj.getString("type")) {
+                    case "CREATED": {
+                        handleCreated(new CreatedCell(obj));
+                    }; return; // If we receive a created element, then we want to stop the thread.
+
+                    case "RELAY": {
+                        handleRelay(new RelayCell(obj));
+                    }; return;
+                }
+                // ?
+            } else {
+                ApplicationService.handle(obj);
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }  
     }
 
     /**
@@ -159,6 +170,59 @@ public class OnionProxy {
      */
     private Router findRouterWithCircId(int id) {
         return circuit.stream().filter(n -> n.getCircuitId() == id).findFirst().orElse(null);
+    }
+
+    private void handleRelay(RelayCell relayCell) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidObjectException, InvalidKeySpecException {
+        // If we receive a relay cell, it is wrapping either a CreatedCell or a DataCell.
+
+        // Step 1 Decrypt Relay Secret
+        // How are we going to do this?
+        // Trivial, Go to the last OR in the circuit. Attempt to decrypt, 
+        //      If decrypted (the plaintext is JSONSearlizable)
+        //      Then handle the associating JSONSearlizable Cell, (type)
+        //  else
+        //      Go to the OR prior to the last one, attempt to decrypt
+        //  This is not a great way of handling.
+
+        // We have the variable router_encrypted to determine the router in the circuit that 
+        
+        // When receiving an Onion Router Message it wrapped starting with OR enter's keys
+
+        // Decrypt and handle
+
+        RelayCell message = relayCell;
+        // Loop through all of the OR's 
+        for(int i = 0; i < circuit.size(); i++) {
+            // Router
+            Router router = circuit.get(i);
+
+            // Decrypt the child of the Relay message.
+            String child = OnionProxyUtil.decryptSymmetric(message.getRelaySecret(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
+
+            // Turn into a JSONObject
+            JSONObject obj = JsonIO.readObject(child);
+            
+            if(obj.containsKey("type")) {
+                // TODO
+                // If this is a CreatedCell, then handle.
+                switch(obj.getString("type")) {
+                    case "CREATED": {
+                        handleCreated(new CreatedCell(obj));
+                    }; return; // If we receive a created element, then we want to stop the thread.
+
+                    case "RELAY": {
+                        message = new RelayCell(obj);
+                    }; break;
+
+                    case "DATA": {
+                        // ToDo Handle Data? I believe this is sent to the ApplicationService layer.
+                    }; return;
+                }
+                // ?
+            } else {
+                ApplicationService.handle(obj);
+            }
+        }
     }
 
     /**
@@ -204,11 +268,45 @@ public class OnionProxy {
      * @param message
      * @param server_addr
      * @param port
+     * @throws NoSuchPaddingException 
+     * @throws NoSuchAlgorithmException 
+     * @throws InvalidAlgorithmParameterException 
+     * @throws BadPaddingException 
+     * @throws IllegalBlockSizeException 
+     * @throws InvalidKeyException 
      */
-    public static void constructOperation(JSONSerializable message, String server_addr, int port) {
+    public JSONSerializable constructOperation(JSONSerializable message, String server_addr, int port) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException {
+        // Wrap the operation in Relays.
+        // This is quite simple
 
+        // 1. Take the message and wrap it in a datacell
+        DataCell cell = new DataCell(conf.getServerAddr(), conf.getServerPort(), (JSONObject) message.toJSONType());
 
+        // Message to be returned
+        JSONSerializable ret = cell;
+        // Last Router in the message
+        Router lastRouter = circuit.get(circuit.size()-1);
 
+        // Wrap the DataCell in Relays from circuit[circuit.len - 1] -> circuit[0]
+        for(int i = circuit.size() - 2 ; i >= 0; i--) {
+            // Get the current router for the current relay
+            Router router = circuit.get(i); 
+
+            // Create the RelaySecret
+            RelaySecret secret = new RelaySecret(lastRouter.getAddr(), lastRouter.getPort(), (JSONObject) ret.toJSONType());
+
+            // Encrypt the relay secret with this routers symmetric key
+            String ciphertext = OnionProxyUtil.encryptSymmetric(secret.serialize(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
+
+            // Create a new RelayCell wrapping 
+            RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), ciphertext);
+            
+            // Update ret and lastRouter
+            ret = newRelayCell;
+            lastRouter = router;
+        }
+
+        return ret;
     }
 
     /**
@@ -217,7 +315,7 @@ public class OnionProxy {
      * 
      * @param createCells List<CreateCell> 
      * @return List<JSONSerializable> - A list containing either RelayCells or CreateCells that will be used to send a message. Each node in the list will be sent to the entry node. 
-     */
+     
     private List<JSONSerializable> createRelays(List<CreateCell> createCells) {
         List<JSONSerializable> relayCells = new ArrayList<>();
 
@@ -242,6 +340,49 @@ public class OnionProxy {
         }
 
         return relayCells;
+    }
+     * @throws IOException 
+     * @throws UnknownHostException 
+    */
+
+    private void sendCreateCells(List<CreateCell> createCells) throws UnknownHostException, IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException {
+
+        // Loop through every element in the circuit
+        for(int i = 0; i < circuit.size(); i++) {
+
+            // Get the create cell destined for this router (NOT ENCRYPTED)
+            JSONSerializable message = createCells.get(i);
+            Router lastRouter = circuit.get(i);
+
+            if( i > 0 ) {
+                // Loop through all of the Routers from 0 -> (i-2), and append them to the RelayCell
+                // This should only be ran if there are 2+ Relays to be made
+                for(int j = i - 1; j >= 0; j--) {
+                    // Get the current router for the current relay
+                    Router router = circuit.get(j); 
+
+                    // Create the RelaySecret
+                    RelaySecret secret = new RelaySecret(lastRouter.getAddr(), lastRouter.getPort(), (JSONObject) message.toJSONType());
+
+                    // Encrypt the relay secret with this routers symmetric key
+                    String ciphertext = OnionProxyUtil.encryptSymmetric(secret.serialize(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
+
+                    // Create a new RelayCell wrapping 
+                    // - DEBUG - RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), (JSONObject) secret.toJSONType());
+                    RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), ciphertext);
+
+                    // Update the message and lastRouter
+                    message = newRelayCell;
+                    lastRouter = router;
+                }
+            }
+
+            System.out.println(message.toJSONType().getFormattedJSON());
+            //send(message.serialize());
+            //pollProxy();
+        }
+
+
     }
 
     /**
@@ -273,8 +414,12 @@ public class OnionProxy {
 
             n.setGx(pair.getPrivate());
 
+            // Get the circuit ID
+            int circID = rand.nextInt();
+            n.setCircuitId(circID);
+
             // 2. Send a CreateCell 
-            CreateCell cell = new CreateCell(symmetricKey_CipherText.getSecond(), rand.nextInt(), B64_encrypted_sym_key);
+            CreateCell cell = new CreateCell(symmetricKey_CipherText.getSecond(), circID, B64_encrypted_sym_key);
             ret.add(cell);
         }
 
