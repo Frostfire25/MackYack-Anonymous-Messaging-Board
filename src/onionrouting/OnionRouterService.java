@@ -146,7 +146,16 @@ public class OnionRouterService implements Runnable {
      * @param cell cell we're performing the operation on.
      */
     private void doRelay(RelayCell cell) {
-        
+        // 1. Get the key from the circID
+        Key key = keyTable.get(cell.getCircID());
+
+        // 2. Decrypt the Relay cell's secret (contains destination IP/port + child).
+        String result = decryptCBC(cell.getSecret(), key, cell.getIV());
+        RelaySecret secret = new RelaySecret(JsonIO.readObject(result));
+
+        // 3. Send the child to its destination
+        String addr = secret.getAddr();
+        int port = secret.getPort();
     }
 
 
