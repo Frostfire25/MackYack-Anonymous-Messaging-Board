@@ -239,18 +239,17 @@ public class OnionProxy {
             byte[] gXBytes = pair.getPublic().getEncoded();
             
             // Initialize the Cipher for encryption
-            //Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding");
-            //cipher.init(Cipher.ENCRYPT_MODE, OnionProxyUtil.getPublicKey("ElGamal", n.getPublicKey()));
+            Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, OnionProxyUtil.getPublicKey("ElGamal", n.getPublicKey()));
 
             // Pair of <SymmetricKey:IV> & <Cipher text of Symmetric Encrypted g^x as bytes.
             Pair<String> symmetricKey_CipherText = OnionProxyUtil.encryptHybrid(gXBytes);
 
             // Encrypt the symmetricKey_CipherText Key+IV
-            //byte[] encrypted_sym_key = cipher.doFinal(symmetricKey_CipherText.getFirst().getBytes());
+            byte[] encrypted_sym_key = cipher.doFinal(symmetricKey_CipherText.getFirst().getBytes());
 
             // B64_Encrypted SYM Key
-            //String B64_encrypted_sym_key = Base64.getEncoder().encodeToString(encrypted_sym_key);
-            String B64_encrypted_sym_key = "";
+            String B64_encrypted_sym_key = Base64.getEncoder().encodeToString(encrypted_sym_key);
 
             n.setGx(pair.getPrivate());
 
