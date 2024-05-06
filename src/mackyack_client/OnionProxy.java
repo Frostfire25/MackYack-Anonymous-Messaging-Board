@@ -23,9 +23,6 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -190,6 +187,7 @@ public class OnionProxy {
         // TODO, Update the Router with the Key? Not sure what kind of object this is
         // - Alex
     }
+
 
     /**
      * Construct all of the relay messages from each cell

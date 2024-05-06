@@ -53,7 +53,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <exclude name="mackyack_server/"/>
       <manifest>
         <attribute name="Main-Class" value="mackyack_client/MackYackClient" />
-        <attribute name="Class-Path" value="lib/bcprov-ext-jdk18on-172.jar" />
+        <attribute name="Class-Path" value="bcprov-ext-jdk18on-172.jar" />
       </manifest>
       <zipfileset src="lib/merrimackutil.jar" excludes="META-INF/*.SF" />
     </jar>
@@ -63,7 +63,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <exclude name="mackyack_client/"/>
       <manifest>
         <attribute name="Main-Class" value="mackyack_server/MackYackServer" />
-        <attribute name="Class-Path" value="lib/bcprov-ext-jdk18on-172.jar" />
+        <attribute name="Class-Path" value="bcprov-ext-jdk18on-172.jar" />
       </manifest>
       <zipfileset src="lib/merrimackutil.jar" excludes="META-INF/*.SF" />
     </jar>
@@ -75,7 +75,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <exclude name="mackyack_messages/"/>
       <manifest>
         <attribute name="Main-Class" value="onionrouting/OnionRouter" />
-        <attribute name="Class-Path" value="lib/bcprov-ext-jdk18on-172.jar" />
+        <attribute name="Class-Path" value="bcprov-ext-jdk18on-172.jar" />
       </manifest>
       <zipfileset src="lib/merrimackutil.jar" excludes="META-INF/*.SF" />
     </jar>
