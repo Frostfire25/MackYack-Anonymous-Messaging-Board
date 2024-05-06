@@ -68,6 +68,8 @@ public class OnionRouterService implements Runnable {
     public void run() {
         try {
 
+            System.out.println("thread started");
+
             BufferedReader reader = new BufferedReader(new InputStreamReader(inSock.getInputStream()));
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(inSock.getOutputStream()));
 
@@ -81,6 +83,8 @@ public class OnionRouterService implements Runnable {
             }
 
             String type = obj.getString("type");
+
+            System.out.println("type:" + obj.getString("type"));
 
             try {
                 switch (type) {
@@ -188,7 +192,7 @@ public class OnionRouterService implements Runnable {
 
                 out.write(child.toJSON());
                 out.newLine();
-                out.flush();
+                out.close();
             } catch (Exception e) {
                 System.err.println("Error connecting to host: " + addr + ":" + port);
                 System.err.println(e);
@@ -232,7 +236,7 @@ public class OnionRouterService implements Runnable {
 
                 out.write(retCell.serialize());
                 out.newLine();
-                out.flush();
+                out.close();
             } catch (Exception e) {
                 System.err.println("Error connecting to host: " + addr + ":" + port);
                 System.err.println(e);
@@ -257,6 +261,9 @@ public class OnionRouterService implements Runnable {
      */
     private void doCreate(CreateCell cell, BufferedWriter output) throws NoSuchAlgorithmException,
             InvalidKeyException, InvalidKeySpecException, IOException {
+        
+        System.out.println("do create start");
+
         // 1. Get gX from the cell. Then convert it to a Public Key for DH magic.
         // Decrypt gX so it can be used.
         byte[] gX = decryptHybrid(cell.getEncryptedSymKey(), cell.getgX());
@@ -267,7 +274,7 @@ public class OnionRouterService implements Runnable {
             CreatedCell retCell = new CreatedCell("", "", 0);
             output.write(retCell.serialize());
             output.newLine();
-            output.flush();
+            output.close();
             return;
         }
 
@@ -301,11 +308,15 @@ public class OnionRouterService implements Runnable {
         // 4. Store circID + key K in table
         OnionRouter.getKeyTable().put(cell.getCircID(), new SecretKeySpec(sharedSecret, "AES"));
 
+        System.out.println("sending Created message");
+
         // Package in CreatedCell and return it back.
         CreatedCell retCell = new CreatedCell(gY, kHash, cell.getCircID());
         output.write(retCell.serialize());
         output.newLine();
-        output.flush();
+        output.close();
+        
+        System.out.println("Created message sent");
     }
 
     /**

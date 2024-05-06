@@ -7,11 +7,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
-import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import java.security.Key;
 import java.security.KeyFactory;
 
@@ -168,7 +171,9 @@ public class OnionRouter
      */
     public static void main(String[] args) throws InterruptedException, IOException, NoSuchAlgorithmException
     {
-    
+        // Register BouncyCastleProvider
+        Security.addProvider(new BouncyCastleProvider());
+
         if (args.length > 2)
             usage();
 
@@ -200,7 +205,7 @@ public class OnionRouter
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             System.err.println("Error deserializing private key for this OR.");
             e.printStackTrace();
-            
+            System.exit(1);            
         }
 
         // Initialize the tables
@@ -217,6 +222,9 @@ public class OnionRouter
 
         while(true) {
             Socket sock = server.accept();
+
+            System.out.println("OR Connection received with addr ["+sock.getInetAddress().getHostAddress()+":"+sock.getLocalPort()+"]" );
+
             Thread ORServiceThread = new Thread(new OnionRouterService(sock));
             ORServiceThread.start();
         }

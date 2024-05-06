@@ -98,6 +98,7 @@ public class CreatedCell implements JSONSerializable {
         obj.put("type", type);
         obj.put("gY", gY);
         obj.put("kHash", kHash);
+        obj.put("circId", circId);
 
         return obj;
     }

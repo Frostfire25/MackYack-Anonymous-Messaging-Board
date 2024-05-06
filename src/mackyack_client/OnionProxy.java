@@ -30,7 +30,6 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -58,6 +57,8 @@ public class OnionProxy {
     private KeyPairGenerator generator;
     private KeyAgreement ecdhKex;
 
+    private Socket sock = null;     // Socket with the entrance node, will be null if it isn't being used
+
     public Router getEntryRouter() {
         return circuit.get(0);
     }
@@ -77,23 +78,26 @@ public class OnionProxy {
         this.generator = KeyPairGenerator.getInstance("EC"); // Generator for elliptic curves (this is our group)    
         this.generator.initialize(256);
 
+        // Poll for new messages on the proxy
+        //pollProxy(true);
+
         // build the circuit
         constructCircuit();
 
         // Construct create cells for each OR
         List<CreateCell> createCells = constructCreateCells();
 
+        // Debug Message
+        System.out.println(Arrays.toString(circuit.toArray()));
+
+
         // Construct a list of messages (Relays) to initiate the circuit keys
         sendCreateCells(createCells);
 
-        System.out.println(Arrays.toString(circuit.toArray()));
 
         //for(JSONSerializable n : create_and_relay_messages) {
         //    System.out.println(n.toJSONType().getFormattedJSON());
         //}
-
-        // Poll for new messages on the proxy
-        pollProxy();
     }
 
     /**
@@ -109,37 +113,51 @@ public class OnionProxy {
         // We can only send to the entrance node in a OR scheme.
         // So that's what we'll do
         Router en_Router = getEntryRouter();
-
         Socket sock = new Socket(en_Router.getAddr(), en_Router.getPort());
+        
         BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
         writer.write(message);
         writer.newLine();
         writer.flush();
+
+        // Assign the socket
+        this.sock = sock;
     }
 
-    private void pollProxy() {
-        poll();
+    private void pollProxy(boolean async) {
+        if(async) {
+            Thread thread = new Thread(() -> {
+                poll();
+            });
+            thread.start();
+        } else {
+            poll();
+        }
     }
 
     private void poll() {
         while(true) {
             try {
-                ServerSocket serverSocket = new ServerSocket(conf.getPort());
-                Socket sock = serverSocket.accept();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
+                System.out.println("Polling...");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(this.sock.getInputStream()));
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.sock.getOutputStream()));
+
+                System.out.println("Connection accepted ["+this.sock.getInetAddress().getHostAddress()+":"+this.sock.getPort()+"]" );
 
                 // Determine if the packet is handled at the Proxy Layer or at the ApplicationService Layer
                 JSONObject obj = JsonIO.readObject(reader.readLine());
                 handJSONObject(obj);
                 // Protocol is to close the socket after a message has been handled.
                 sock.close();
+                sock = null;
+                return;
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
+
     private void handJSONObject(JSONObject obj) {
         try {
             if(obj.containsKey("type")) {
@@ -152,6 +170,10 @@ public class OnionProxy {
 
                     case "RELAY": {
                         handleRelay(new RelayCell(obj));
+                    }; return;
+
+                    case "DATA": {
+                        // ??
                     }; return;
                 }
                 // ?
@@ -343,9 +365,10 @@ public class OnionProxy {
     }
      * @throws IOException 
      * @throws UnknownHostException 
+     * @throws InterruptedException 
     */
 
-    private void sendCreateCells(List<CreateCell> createCells) throws UnknownHostException, IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException {
+    private void sendCreateCells(List<CreateCell> createCells) throws UnknownHostException, IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException, InterruptedException {
 
         // Loop through every element in the circuit
         for(int i = 0; i < circuit.size(); i++) {
@@ -354,6 +377,7 @@ public class OnionProxy {
             JSONSerializable message = createCells.get(i);
             Router lastRouter = circuit.get(i);
 
+            // If there needs to be a relay
             if( i > 0 ) {
                 // Loop through all of the Routers from 0 -> (i-2), and append them to the RelayCell
                 // This should only be ran if there are 2+ Relays to be made
@@ -378,8 +402,8 @@ public class OnionProxy {
             }
 
             System.out.println(message.toJSONType().getFormattedJSON());
-            //send(message.serialize());
-            //pollProxy();
+            send(message.serialize());
+            pollProxy(false);
         }
 
 
