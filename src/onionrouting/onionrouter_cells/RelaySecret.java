@@ -6,14 +6,17 @@ import merrimackutil.json.JSONSerializable;
 import merrimackutil.json.types.JSONObject;
 import merrimackutil.json.types.JSONType;
 
+/**
+ * This element becomes secret (encrypted)
+ */
 public class RelaySecret implements JSONSerializable {
 
     private final String type = "RELAYSECRET";
-    private String addr; // ENCRYPTED
-    private int port; // ENCRYPTED 
-    private String child; // Represented as a Ek(JSONObject) // ENCRYPTED
+    private String addr;
+    private int port;
+    private JSONObject child;
 
-    public RelaySecret(String addr, int port, String child) {
+    public RelaySecret(String addr, int port, JSONObject child) {
         this.addr = addr;
         this.port = port;
         this.child = child;
@@ -43,7 +46,7 @@ public class RelaySecret implements JSONSerializable {
             if (!message.containsKey("child"))
                 throw new InvalidObjectException("Relay needs a child.");
             else 
-                child = message.getString("child");
+                child = message.getObject("child");
         }
     }
 
@@ -72,7 +75,7 @@ public class RelaySecret implements JSONSerializable {
         return port;
     }
 
-    public String getChild() {
+    public JSONObject getChild() {
         return child;
     }
     
