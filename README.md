@@ -1,7 +1,13 @@
-# MackYack: Anonymous Messaging Service using Onion Routing 
+# MackYack: 
+## Anonymous Messaging Service using Onion Routing 
+
+<p style="align: center;">
+
+ ![MackYack Logo](./images/logo.png) 
+
+</p>
 
 ## MackYack Protocol
-
 
 
 ### Client Functionality
