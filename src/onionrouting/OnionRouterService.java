@@ -182,7 +182,7 @@ public class OnionRouterService implements Runnable {
             // a. If we're sending a CreateCell, we save the information of the OR to the outTable
             if(child.containsKey("type")) {
                 if(child.getString("type").equals("CREATE")) {
-                    int outCircID = child.getInt("circID"); // Get the circID Alice assigned for the next OR in the circuit
+                    String outCircID = child.getString("circID"); // Get the circID Alice assigned for the next OR in the circuit
                     // Put the:
                     //  i. outCircID -> outgoing OR info in the outTable
                     // ii. outCircID -> inCircID in the askTable (for when we do the reverse direction).
@@ -213,7 +213,7 @@ public class OnionRouterService implements Runnable {
         // b. If it's returning TO Alice (i.e. the circID is in the outTable).
         else if (OnionRouter.getOutTable().containsKey(circID)) {
             // 1. Get this.circID from the outgoing circID ("outgoing" in this context means we're receiving a returning RelayCell)
-            Integer thisCircID = OnionRouter.getAskTable().get(circID);
+            String thisCircID = OnionRouter.getAskTable().get(circID);
             if(thisCircID == null) {
                 System.err.print("Could not find this.circID from the askTable.");
                 return;
@@ -283,7 +283,7 @@ public class OnionRouterService implements Runnable {
         // If gX is null, that means we encountered an error. Send back a CreatedCell
         // with all empty fields and return.
         if (gX == null) {
-            CreatedCell retCell = new CreatedCell("", "", 0);
+            CreatedCell retCell = new CreatedCell("", "", "");
             output.write(retCell.serialize());
             output.newLine();
             output.close();
