@@ -223,7 +223,7 @@ public class OnionRouter
         while(true) {
             Socket sock = server.accept();
 
-            System.out.println("OR Connection received with addr ["+sock.getInetAddress().getHostAddress()+":"+sock.getLocalPort()+"]" );
+            System.out.println("OR Connection received with addr ["+sock.getInetAddress().getHostAddress()+":"+sock.getPort()+"]" );
 
             Thread ORServiceThread = new Thread(new OnionRouterService(sock));
             ORServiceThread.start();

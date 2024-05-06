@@ -375,6 +375,8 @@ public class OnionProxy {
 
             // Get the create cell destined for this router (NOT ENCRYPTED)
             JSONSerializable message = createCells.get(i);
+            System.out.println("Create message:");
+            System.out.println(message.toJSONType().getFormattedJSON());
             Router lastRouter = circuit.get(i);
 
             // If there needs to be a relay
