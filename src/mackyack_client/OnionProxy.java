@@ -41,6 +41,7 @@ import merrimackutil.json.types.JSONObject;
 import merrimackutil.util.Pair;
 import onionrouting.onionrouter_cells.CreateCell;
 import onionrouting.onionrouter_cells.CreatedCell;
+import onionrouting.onionrouter_cells.DataCell;
 import onionrouting.onionrouter_cells.RelayCell;
 import onionrouting.onionrouter_cells.RelaySecret;
 
@@ -275,10 +276,45 @@ public class OnionProxy {
      * @param message
      * @param server_addr
      * @param port
+     * @throws NoSuchPaddingException 
+     * @throws NoSuchAlgorithmException 
+     * @throws InvalidAlgorithmParameterException 
+     * @throws BadPaddingException 
+     * @throws IllegalBlockSizeException 
+     * @throws InvalidKeyException 
      */
-    public static void constructOperation(JSONSerializable message, String server_addr, int port) {
+    public JSONSerializable constructOperation(JSONSerializable message, String server_addr, int port) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException {
         // Wrap the operation in Relays.
         // This is quite simple
+
+        // 1. Take the message and wrap it in a datacell
+        DataCell cell = new DataCell(conf.getServerAddr(), conf.getServerPort(), (JSONObject) message.toJSONType());
+
+        // Message to be returned
+        JSONSerializable ret = cell;
+        // Last Router in the message
+        Router lastRouter = circuit.get(circuit.size()-1);
+
+        // Wrap the DataCell in Relays from circuit[circuit.len - 1] -> circuit[0]
+        for(int i = circuit.size() - 2 ; i >= 0; i--) {
+            // Get the current router for the current relay
+            Router router = circuit.get(i); 
+
+            // Create the RelaySecret
+            RelaySecret secret = new RelaySecret(lastRouter.getAddr(), lastRouter.getPort(), (JSONObject) ret.toJSONType());
+
+            // Encrypt the relay secret with this routers symmetric key
+            String ciphertext = OnionProxyUtil.encryptSymmetric(secret.serialize(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
+
+            // Create a new RelayCell wrapping 
+            RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), ciphertext);
+            
+            // Update ret and lastRouter
+            ret = newRelayCell;
+            lastRouter = router;
+        }
+
+        return ret;
     }
 
     /**
@@ -342,8 +378,9 @@ public class OnionProxy {
                     // Create a new RelayCell wrapping 
                     RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), ciphertext);
                     
-                    // Encrypt this relay cell
+                    // Update the message and lastRouter
                     message = newRelayCell;
+                    lastRouter = router;
                 }
             }
 
