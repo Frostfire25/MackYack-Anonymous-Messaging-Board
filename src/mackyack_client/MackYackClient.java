@@ -136,7 +136,7 @@ public class MackYackClient
 
         routersConfig = new RoutersConfig(conf.getRoutersPath());
 
-        proxy = new OnionProxy(routersConfig);
+        proxy = new OnionProxy(routersConfig, conf);
 
         // TODO: Client implementation
         System.out.println("Mack Yack Client built successfully.");

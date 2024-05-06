@@ -1,5 +1,13 @@
 package mackyack_client;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
@@ -8,6 +16,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +34,7 @@ import merrimackutil.json.JSONSerializable;
 import merrimackutil.json.JsonIO;
 import merrimackutil.json.types.JSONObject;
 import merrimackutil.util.Pair;
+import onionrouting.OnionRouterService;
 import onionrouting.onionrouter_cells.CreateCell;
 import onionrouting.onionrouter_cells.RelayCell;
 
@@ -34,6 +44,7 @@ public class OnionProxy {
 
     private final static int ROUTER_COUNT = 3;
     private RoutersConfig routersConfig;
+    private ClientConfig conf;
 
     private List<Router> circuit = new ArrayList<>();
 
@@ -48,8 +59,9 @@ public class OnionProxy {
      * Default Constructor to initialize the Onion Routing System.
      * @throws Exception 
      */
-    public OnionProxy(RoutersConfig routersConfig) throws Exception {
+    public OnionProxy(RoutersConfig routersConfig, ClientConfig conf) throws Exception {
         this.routersConfig = routersConfig;
+        this.conf = conf;
         this.circID = rand.nextInt();
 
         // Initialize the BCProvider
@@ -64,17 +76,68 @@ public class OnionProxy {
         // Construct a list of messages (Relays) to initiate the circuit keys
         List<JSONSerializable> create_and_relay_messages = createRelays(createCells);
 
+        System.out.println(Arrays.toString(circuit.toArray()));
 
-        for(CreateCell n : createCells) {
+        for(JSONSerializable n : create_and_relay_messages) {
             System.out.println(n.toJSONType().getFormattedJSON());
-            System.out.println();
         }
 
-        //System.out.println(create_and_relay_messages.get(0).toJSONType().getFormattedJSON());
+        // Poll for new messages on the proxy
+        pollProxy();
+    }
 
-        //System.out.println("\n\n\n");
+    /**
+     * Abstract Function to send a Message.
+     * Message construction does not happen at this level.
+     * This function strictly sends a Message to the entrance OR.
+     * Once the entrance OR receives, the socket will be closed on the OR's end.
+     * @param message
+     * @throws UnknownHostException
+     * @throws IOException
+     */
+    public void send(JSONSerializable message) throws UnknownHostException, IOException {
+        // We can only send to the entrance node in a OR scheme.
+        // So that's what we'll do
+        Router en_Router = getEntryRouter();
 
-        System.out.println(create_and_relay_messages.get(create_and_relay_messages.size()-1).toJSONType().getFormattedJSON());
+        Socket sock = new Socket(en_Router.getAddr(), en_Router.getPort());
+        BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
+        writer.write(message.serialize());
+        writer.newLine();
+        writer.flush();
+    }
+
+    private void pollProxy() {
+        // Start the server socket in a separate thread
+        Thread serverThread = new Thread(() -> {
+            while(true) {
+                try {
+                    ServerSocket serverSocket = new ServerSocket(conf.getPort());
+                    Socket sock = serverSocket.accept();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
+
+                    // Determine if the packet is handled at the Proxy Layer or at the ApplicationService Layer
+                    JSONObject obj = JsonIO.readObject(reader.readLine());
+
+                    if(obj.containsKey("type")) {
+                        // TODO
+                        // If this is a CreatedCell, then handle.
+                        // ?
+                    } else {
+                        ApplicationService.handle(obj);
+                    }
+
+
+                    // Protocol is to close the socket after a message has been handled.
+                    sock.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        serverThread.start(); // Start the server thread
     }
 
     /**
@@ -93,10 +156,10 @@ public class OnionProxy {
 
             RelayCell relayCell = new RelayCell(circID, circuit.get(i).getAddr(), circuit.get(i).getPort(), (JSONObject) createCells.get(i).toJSONType());
 
-            if(i > 1) {
+            if( i > 1 ) {
                 // Loop through all of the Routers from 0 -> (i-2), and append them to the RelayCell
                 // This should only be ran if there are 2+ Relays to be made
-                for(int j = i - 1; j >= 0; j--) {
+                for(int j = i - 1; j > 0; j--) {
                     // Create a new RelayCell wrapping 
                     RelayCell newRelayCell = new RelayCell(circID, circuit.get(j).getAddr(), circuit.get(j).getPort(), (JSONObject) relayCell.toJSONType());
                     relayCell = newRelayCell;
