@@ -158,6 +158,8 @@ public class OnionTests {
             assertEquals(recvKHash, kHash);
             assertEquals(new SecretKeySpec(sharedSecret, "AES"), keyTable.get(5));
 
+            
+
             in.close();
         } catch (IOException e) {
             e.printStackTrace();

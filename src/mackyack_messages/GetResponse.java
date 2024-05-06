@@ -1,6 +1,7 @@
 package mackyack_messages;
 
 import java.io.InvalidObjectException;
+import java.util.ArrayList;
 import java.util.List;
 
 import merrimackutil.json.JSONSerializable;
@@ -38,6 +39,15 @@ public class GetResponse implements JSONSerializable {
         if (obj instanceof JSONObject) {
             message = (JSONObject) obj;
 
+            messages = new ArrayList<>();
+            if(message.containsKey("messages")) {
+                JSONArray arr = (JSONArray) message.getArray("messages");
+                for(Object n : arr) {
+                    JSONObject o = (JSONObject) n;
+                    messages.add(new Message(o.getString("data"), o.getString("timestamp")));
+                }
+            } else 
+                throw new InvalidObjectException("Message must contain a messages field.");
             
         }
     }
@@ -65,7 +75,7 @@ public class GetResponse implements JSONSerializable {
         for (int i = 0; i < messages.size(); i++)
             array.add(messages.get(i).toJSONType());
 
-        obj.put("hosts", array);
+        obj.put("messages", array);
 
         return obj;
     }

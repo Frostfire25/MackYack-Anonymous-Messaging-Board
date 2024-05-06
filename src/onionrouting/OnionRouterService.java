@@ -62,7 +62,6 @@ public class OnionRouterService implements Runnable {
         this.inSock = inSock;
         this.outSock = null;
         this.keyTable = keyTable;
-        this.fwdTable = fwdTable;
         this.privKey = privKey;
         // Initialize the BCProvider
         Security.addProvider(new BouncyCastleProvider());
@@ -178,7 +177,7 @@ public class OnionRouterService implements Runnable {
 
         // If gX is null, that means we encountered an error. Send back a CreatedCell with all empty fields and return.
         if(gX == null) {
-            CreatedCell retCell = new CreatedCell("", "");
+            CreatedCell retCell = new CreatedCell("", "", 0);
             output.write(retCell.serialize());
             output.newLine();
             output.flush();
@@ -217,7 +216,7 @@ public class OnionRouterService implements Runnable {
         keyTable.put(cell.getCircID(), new SecretKeySpec(sharedSecret, "AES"));
 
         // Package in CreatedCell and return it back.
-        CreatedCell retCell = new CreatedCell(gY, kHash);
+        CreatedCell retCell = new CreatedCell(gY, kHash, cell.getCircID());
         output.write(retCell.serialize());
         output.newLine();
         output.flush();

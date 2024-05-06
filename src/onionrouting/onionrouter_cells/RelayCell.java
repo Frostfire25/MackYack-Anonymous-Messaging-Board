@@ -14,9 +14,37 @@ import merrimackutil.json.types.JSONType;
 public class RelayCell implements JSONSerializable {
 
     private final String type = "RELAY";
-    private int circID;
-    private String addr;
-    private int port;
+    private int circID; 
+    private String base64_IV;
+    private String relaySecret;
+    //private JSONObject relaySecret;
+
+    /**
+     * Constructor DELETE THIS, TESTING
+     * @param circID
+     * @param addr
+     * @param port
+     * @param child
+     
+    public RelayCell(int circID, String base64_IV, JSONObject relaySecret) {
+        this.circID = circID;
+        this.base64_IV = base64_IV;
+        this.relaySecret = relaySecret;
+    }
+    */
+
+    /**
+     * Constructor
+     * @param circID
+     * @param addr
+     * @param port
+     * @param child
+     */
+    public RelayCell(int circID, String base64_IV, String relaySecret) {
+        this.circID = circID;
+        this.base64_IV = base64_IV;
+        this.relaySecret = relaySecret;
+    }
 
     /**
      * Construct a RelayExtend cell from the corresponding JSON object.
@@ -49,7 +77,17 @@ public class RelayCell implements JSONSerializable {
             else
                 circID = message.getInt("circID");
 
-            if (message.size() > 2)
+            if (!message.containsKey("relaySecret"))
+                throw new InvalidObjectException("Relay needs an relaySecret.");
+            else
+                relaySecret = message.getString("relaySecret");
+                
+            if (!message.containsKey("base64_IV"))
+                throw new InvalidObjectException("Relay needs an base64_IV.");
+            else
+                base64_IV = message.getString("base64_IV");
+                
+            if (message.size() > 4)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -75,15 +113,22 @@ public class RelayCell implements JSONSerializable {
 
         obj.put("type", type);
         obj.put("circID", circID);
+        obj.put("base64_IV", base64_IV);
+        obj.put("relaySecret", relaySecret);
 
         return obj;
     }
 
-    public String getType() {
-        return type;
-    }
 
     public int getCircID() {
         return circID;
+    }
+
+    public String getIV() {
+        return base64_IV;
+    }
+
+    public String getRelaySecret() {
+        return relaySecret;
     }
 }

@@ -1,6 +1,8 @@
 package mackyack_client;
 
 import java.io.InvalidObjectException;
+import java.security.Key;
+import java.security.PrivateKey;
 
 import merrimackutil.json.JSONSerializable;
 import merrimackutil.json.types.JSONObject;
@@ -79,5 +81,53 @@ public class Router implements JSONSerializable {
     public String getPublicKey() {
         return publicKey;
     }
+
+    @Override
+    public String toString() {
+        return "["+circuitId+"] - "+addr +":"+port;
+    }
+
+    /**
+     * Non-Stored code-bits regarding what we know about a Router
+     */
     
+    private int circuitId;
+    private PrivateKey gx;
+    private Key symmetricKey;
+    private String b64_IV;
+
+    public String getB64_IV() {
+        return b64_IV;
+    }
+
+    public void setB64_IV(String b64_IV) {
+        this.b64_IV = b64_IV;
+    }
+
+    public int getCircuitId() {
+        return circuitId;
+    }
+
+    public Key getSymmetricKey() {
+        return symmetricKey;
+    }
+
+    public void setSymmetricKey(Key symmetricKey) {
+        this.symmetricKey = symmetricKey;
+    }
+
+    public void setCircuitId(int circuitId) {
+        this.circuitId = circuitId;
+    }
+
+    public PrivateKey getGx() {
+        return gx;
+    }
+
+    public void setGx(PrivateKey gx) {
+        this.gx = gx;
+    }
+
+
+
 }

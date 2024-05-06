@@ -20,54 +20,52 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Implementation a dig command for retrieving information from DNS.
   </description>
 
-  <!-- set global properties -->
+  <!-- set global properties for this build -->
   <property name="src" location="src"/>
   <property name="build" location="build"/>
   <property name="dist" location="dist"/>
-  <property name="lib" location="lib"/>
 
   <target name="init">    <!-- Create the build directory structure used by compile -->
     <mkdir dir="${build}"/>
   </target>
 
-  <!-- Compile the Java code from ${src} into ${build} -->
   <target name="compile" depends="init"
         description="Compile source code">
+    <!-- Compile the Java code from ${src} into ${build} -->
+
     <javac includeantruntime="false"
-      srcdir="${src}" destdir="${build}" debug="true"
-      debuglevel="lines,vars,source">
-      <compilerarg value="-Xlint:deprecation,unchecked" />
-      <classpath>
-          <fileset dir="${lib}" includes="**/*.jar"/>  
-      </classpath>
-    </javac>
+      srcdir="${src}" destdir="${build}" classpath="lib/merrimackutil.jar:lib/bcprov-ext-jdk18on-172.jar"/>
   </target>
 
-  <target name="dist" depends="compile"
-        description="Generate the jar file for the library">
+   <target name="dist" depends="compile"
+        description="Generate the jar file for running the code">
     <!-- Create the distribution directory -->
     <mkdir dir="${dist}"/>
+
+    <!-- 
+      Copy bcprov over to dist. Windows an Mac don't like it bundled. The 
+      security checks are different between those OSes and Linux.
+     -->
+    <copy file="lib/bcprov-ext-jdk18on-172.jar" todir="${dist}" />
 
     <!-- Build the MackYack Client jar file -->
     <jar jarfile="${dist}/mackyack_client.jar" basedir="${build}">
       <exclude name="mackyack_server/"/>
-      <exclude name="onionrouting/OnionRouter.java"/>
       <manifest>
         <attribute name="Main-Class" value="mackyack_client/MackYackClient" />
+        <attribute name="Class-Path" value="bcprov-ext-jdk18on-172.jar" />
       </manifest>
       <zipfileset src="lib/merrimackutil.jar" excludes="META-INF/*.SF" />
-      <zipfileset src="lib/bcprov-ext-jdk18on-172.jar" excludes="META-INF/*.SF" />
     </jar>
 
     <!-- Build the MackYack Server jar file -->
     <jar jarfile="${dist}/mackyack_server.jar" basedir="${build}">
       <exclude name="mackyack_client/"/>
-      <exclude name="onionrouting/"/>
       <manifest>
         <attribute name="Main-Class" value="mackyack_server/MackYackServer" />
+        <attribute name="Class-Path" value="bcprov-ext-jdk18on-172.jar" />
       </manifest>
       <zipfileset src="lib/merrimackutil.jar" excludes="META-INF/*.SF" />
-      <zipfileset src="lib/bcprov-ext-jdk18on-172.jar" excludes="META-INF/*.SF" />
     </jar>
 
     <!-- Build the Onion Router jar file -->
@@ -77,11 +75,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <exclude name="mackyack_messages/"/>
       <manifest>
         <attribute name="Main-Class" value="onionrouting/OnionRouter" />
+        <attribute name="Class-Path" value="bcprov-ext-jdk18on-172.jar" />
       </manifest>
       <zipfileset src="lib/merrimackutil.jar" excludes="META-INF/*.SF" />
-      <zipfileset src="lib/bcprov-ext-jdk18on-172.jar" excludes="META-INF/*.SF" />
     </jar>
-
   </target>
 
   <!-- Delete the autognerated directories -->

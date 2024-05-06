@@ -16,6 +16,7 @@ public class CreatedCell implements JSONSerializable {
     private final String type = "CREATED";
     private String gY;          // Base 64-encoded second half of Diffie-Hellman KEX.
     private String kHash;       // Base 64-encoded SHA-3 256 hash: H(K || "handshake").
+    private int circId;         // CircID associated with the OR.
 
     /**
      * Default constructor to initialize a returning CreatedCell object.
@@ -23,9 +24,10 @@ public class CreatedCell implements JSONSerializable {
      * @param gY Base 64-encoded second half of Diffie-Hellman KEX.
      * @param kHash Base 64-encoded SHA-3 256 hash: H(K || "handshake").
      */
-    public CreatedCell(String gY, String kHash) {
+    public CreatedCell(String gY, String kHash, int circId) {
         this.gY = gY;
         this.kHash = kHash;
+        this.circId = circId;
     }
 
     /**
@@ -64,7 +66,12 @@ public class CreatedCell implements JSONSerializable {
             else
                 kHash = message.getString("kHash");
 
-            if (message.size() > 3)
+            if (!message.containsKey("circId"))
+                throw new InvalidObjectException("Created needs a circId.");
+            else
+                circId = message.getInt("circId");
+
+            if (message.size() > 4)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -93,6 +100,14 @@ public class CreatedCell implements JSONSerializable {
         obj.put("kHash", kHash);
 
         return obj;
+    }
+
+    /**
+     * Accessors
+     */
+
+    public int getCircId() {
+        return circId;
     }
 
     public String getType() {

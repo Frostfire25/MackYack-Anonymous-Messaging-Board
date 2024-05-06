@@ -1,8 +1,9 @@
 package mackyack_client;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InvalidObjectException;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import java.security.Security;
 import merrimackutil.cli.LongOption;
 import merrimackutil.cli.OptionParser;
 import merrimackutil.util.Tuple;
@@ -17,6 +18,8 @@ public class MackYackClient
     private static ClientConfig conf = null;                    // The configuration information.
     private static String configFile = "client-config.json";    // Default configuration file.
     private static RoutersConfig routersConfig;
+
+    private static OnionProxy proxy;
 
     /**
      * Prints the usage to the screen and exits.
@@ -115,18 +118,21 @@ public class MackYackClient
     /**
      * The entry point
      * @param args the command line arguments.
-     * @throws IOException 
-     * @throws InterruptedException 
+     * @throws Exception 
      */
-    public static void main(String[] args) throws InterruptedException, IOException
+    public static void main(String[] args) throws Exception
     {
-    
+        // Append bouncy castle Provider
+        Security.addProvider(new BouncyCastleProvider());
+
         if (args.length > 2)
             usage();
 
         processArgs(args); 
 
         routersConfig = new RoutersConfig(conf.getRoutersPath());
+
+        proxy = new OnionProxy(routersConfig, conf);
 
         // TODO: Client implementation
         System.out.println("Mack Yack Client built successfully.");
