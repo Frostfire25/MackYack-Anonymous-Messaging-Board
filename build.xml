@@ -51,7 +51,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <!-- Build the MackYack Client jar file -->
     <jar jarfile="${dist}/mackyack_client.jar" basedir="${build}">
       <exclude name="mackyack_server/"/>
-      <exclude name="onionrouting/"/>
       <manifest>
         <attribute name="Main-Class" value="mackyack_client/MackYackClient" />
       </manifest>
@@ -62,7 +61,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <!-- Build the MackYack Server jar file -->
     <jar jarfile="${dist}/mackyack_server.jar" basedir="${build}">
       <exclude name="mackyack_client/"/>
-      <exclude name="onionrouting/"/>
       <manifest>
         <attribute name="Main-Class" value="mackyack_server/MackYackServer" />
       </manifest>

@@ -17,7 +17,7 @@ public class RelayCell implements JSONSerializable {
     private int circID;
     private String addr;
     private int port;
-    private String child; // Represented as a JSONObject
+    private JSONObject child; // Represented as a JSONObject
 
     /**
      * Constructor
@@ -26,7 +26,7 @@ public class RelayCell implements JSONSerializable {
      * @param port
      * @param child
      */
-    public RelayCell(int circID, String addr, int port, String child) {
+    public RelayCell(int circID, String addr, int port, JSONObject child) {
         this.circID = circID;
         this.addr = addr;
         this.port = port;
@@ -76,10 +76,10 @@ public class RelayCell implements JSONSerializable {
 
             if (!message.containsKey("child"))
                 throw new InvalidObjectException("Relay needs a child.");
-            else if(!message.getString("child").equals(type))
-                child = message.getString("child");
+            else 
+                child = message.getObject("child");
 
-            if (message.size() > 5)
+            if (message.size() > 6)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -112,11 +112,20 @@ public class RelayCell implements JSONSerializable {
         return obj;
     }
 
-    public String getType() {
-        return type;
-    }
 
     public int getCircID() {
         return circID;
+    }
+
+    public String getAddr() {
+        return addr;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public JSONObject getChild() {
+        return child;
     }
 }

@@ -22,6 +22,7 @@ import javax.crypto.NoSuchPaddingException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import merrimackutil.json.JSONSerializable;
+import merrimackutil.json.JsonIO;
 import merrimackutil.json.types.JSONObject;
 import merrimackutil.util.Pair;
 import onionrouting.onionrouter_cells.CreateCell;
@@ -60,6 +61,20 @@ public class OnionProxy {
         // Construct create cells for each OR
         List<CreateCell> createCells = constructCreateCells();
 
+        // Construct a list of messages (Relays) to initiate the circuit keys
+        List<JSONSerializable> create_and_relay_messages = createRelays(createCells);
+
+
+        for(CreateCell n : createCells) {
+            System.out.println(n.toJSONType().getFormattedJSON());
+            System.out.println();
+        }
+
+        //System.out.println(create_and_relay_messages.get(0).toJSONType().getFormattedJSON());
+
+        //System.out.println("\n\n\n");
+
+        System.out.println(create_and_relay_messages.get(create_and_relay_messages.size()-1).toJSONType().getFormattedJSON());
     }
 
     /**
@@ -76,19 +91,20 @@ public class OnionProxy {
         relayCells.add(createCells.get(0));
         for(int i = 1; i < createCells.size(); i++) {
 
-            RelayCell relayCell = new RelayCell(circID, circuit.get(i).getAddr(), circuit.get(i).getPort(), createCells.get(i).serialize());
+            RelayCell relayCell = new RelayCell(circID, circuit.get(i).getAddr(), circuit.get(i).getPort(), (JSONObject) createCells.get(i).toJSONType());
 
-            // Loop through all of the Routers from 0 -> (i-2), and append them to the RelayCell
-            // This should only be ran if there are 2+ Relays to be made
-            for(int j = i-2; j >= 0; j--) {
-                // Create a new RelayCell wrapping 
-                RelayCell newRelayCell = new RelayCell(circID, circuit.get(j).getAddr(), circuit.get(j).getPort(), relayCell.serialize());
-                relayCell = newRelayCell;
+            if(i > 1) {
+                // Loop through all of the Routers from 0 -> (i-2), and append them to the RelayCell
+                // This should only be ran if there are 2+ Relays to be made
+                for(int j = i - 1; j >= 0; j--) {
+                    // Create a new RelayCell wrapping 
+                    RelayCell newRelayCell = new RelayCell(circID, circuit.get(j).getAddr(), circuit.get(j).getPort(), (JSONObject) relayCell.toJSONType());
+                    relayCell = newRelayCell;
+                }
             }
             
             // Append to the array
             relayCells.add(relayCell);
-
         }
 
         return relayCells;
@@ -108,20 +124,21 @@ public class OnionProxy {
             byte[] gXBytes = pair.getPublic().getEncoded();
             
             // Initialize the Cipher for encryption
-            Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, OnionProxyUtil.getPublicKey("ElGamal", n.getPublicKey()));
+            //Cipher cipher = Cipher.getInstance("ElGamal/None/NoPadding");
+            //cipher.init(Cipher.ENCRYPT_MODE, OnionProxyUtil.getPublicKey("ElGamal", n.getPublicKey()));
 
             // Pair of <SymmetricKey:IV> & <Cipher text of Symmetric Encrypted g^x as bytes.
             Pair<String> symmetricKey_CipherText = OnionProxyUtil.encryptHybrid(gXBytes);
 
             // Encrypt the symmetricKey_CipherText Key+IV
-            byte[] encrypted_sym_key = cipher.doFinal(symmetricKey_CipherText.getFirst().getBytes());
+            //byte[] encrypted_sym_key = cipher.doFinal(symmetricKey_CipherText.getFirst().getBytes());
 
             // B64_Encrypted SYM Key
-            String B64_encrypted_sym_key = Base64.getEncoder().encodeToString(encrypted_sym_key);
+            //String B64_encrypted_sym_key = Base64.getEncoder().encodeToString(encrypted_sym_key);
+            String B64_encrypted_sym_key = "";
 
             // 2. Send a CreateCell 
-            CreateCell cell = new CreateCell(symmetricKey_CipherText.getSecond(), 5, B64_encrypted_sym_key);
+            CreateCell cell = new CreateCell(symmetricKey_CipherText.getSecond(), circID, B64_encrypted_sym_key);
             ret.add(cell);
         }
 
