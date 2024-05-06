@@ -22,6 +22,10 @@ public class RelaySecret implements JSONSerializable {
         this.child = child;
     }
 
+    public RelaySecret(JSONObject obj) throws InvalidObjectException {
+        deserialize(obj);
+    }
+
     @Override
     public void deserialize(JSONType obj) throws InvalidObjectException {
         JSONObject message;

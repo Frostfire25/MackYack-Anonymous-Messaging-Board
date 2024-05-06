@@ -17,21 +17,6 @@ public class RelayCell implements JSONSerializable {
     private int circID; 
     private String base64_IV;
     private String relaySecret;
-    //private JSONObject relaySecret;
-
-    /**
-     * Constructor DELETE THIS, TESTING
-     * @param circID
-     * @param addr
-     * @param port
-     * @param child
-     
-    public RelayCell(int circID, String base64_IV, JSONObject relaySecret) {
-        this.circID = circID;
-        this.base64_IV = base64_IV;
-        this.relaySecret = relaySecret;
-    }
-    */
 
     /**
      * Constructor
