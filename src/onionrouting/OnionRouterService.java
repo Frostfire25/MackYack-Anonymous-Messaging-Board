@@ -146,12 +146,7 @@ public class OnionRouterService implements Runnable {
      * @param cell cell we're performing the operation on.
      */
     private void doRelay(RelayCell cell) {
-        // TODO: RELAY
-
-        /*
-         * Notes: Relay basically means "encrypted" for our implementation,
-         *        and thus do not interpret -- just relay the message along.
-         */
+        
     }
 
 
