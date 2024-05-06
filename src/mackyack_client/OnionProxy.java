@@ -86,7 +86,7 @@ public class OnionProxy {
         // Construct a list of messages (Relays) to initiate the circuit keys
         sendCreateCells(createCells);
 
-        //System.out.println(Arrays.toString(circuit.toArray()));
+        System.out.println(Arrays.toString(circuit.toArray()));
 
         //for(JSONSerializable n : create_and_relay_messages) {
         //    System.out.println(n.toJSONType().getFormattedJSON());
@@ -118,16 +118,8 @@ public class OnionProxy {
         writer.flush();
     }
 
-    private void pollProxy(boolean async) {
-        if(false) {
-            // Start the server socket in a separate thread
-            Thread serverThread = new Thread(() -> {
-                poll();
-            });
-            serverThread.start(); // Start the server thread
-        } else {
-            poll();
-        }
+    private void pollProxy() {
+        poll();
     }
 
     private void poll() {
@@ -205,7 +197,8 @@ public class OnionProxy {
             Router router = circuit.get(i);
 
             // Decrypt the child of the Relay message.
-            String child = OnionProxyUtil.decryptSymmetric(message.getRelaySecret(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
+            // String child = OnionProxyUtil.decryptSymmetric(message.getRelaySecret(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
+            String child = "";
 
             // Turn into a JSONObject
             JSONObject obj = JsonIO.readObject(child);
@@ -303,11 +296,11 @@ public class OnionProxy {
             // Create the RelaySecret
             RelaySecret secret = new RelaySecret(lastRouter.getAddr(), lastRouter.getPort(), (JSONObject) ret.toJSONType());
 
-            // Encrypt the relay secret with this routers symmetric key
-            String ciphertext = OnionProxyUtil.encryptSymmetric(secret.serialize(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
+            //// Encrypt the relay secret with this routers symmetric key
+            //String ciphertext = OnionProxyUtil.encryptSymmetric(secret.serialize(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
 
             // Create a new RelayCell wrapping 
-            RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), ciphertext);
+            RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), secret.toJSONType().getFormattedJSON());
             
             // Update ret and lastRouter
             ret = newRelayCell;
@@ -373,20 +366,21 @@ public class OnionProxy {
                     RelaySecret secret = new RelaySecret(lastRouter.getAddr(), lastRouter.getPort(), (JSONObject) message.toJSONType());
 
                     // Encrypt the relay secret with this routers symmetric key
-                    String ciphertext = OnionProxyUtil.encryptSymmetric(secret.serialize(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
+                    //String ciphertext = OnionProxyUtil.encryptSymmetric(secret.serialize(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
 
                     // Create a new RelayCell wrapping 
-                    RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), ciphertext);
-                    
+                    //RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), ciphertext);
+                    RelayCell newRelayCell = new RelayCell(router.getCircuitId(), router.getB64_IV(), (JSONObject) secret.toJSONType());
+
                     // Update the message and lastRouter
                     message = newRelayCell;
                     lastRouter = router;
                 }
             }
 
-            //System.out.println(message.toJSONType().getFormattedJSON());
-            send(message.serialize());
-            pollProxy(false);
+            System.out.println(message.toJSONType().getFormattedJSON());
+            //send(message.serialize());
+            //pollProxy();
         }
 
 

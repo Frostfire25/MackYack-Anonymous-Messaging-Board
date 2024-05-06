@@ -84,7 +84,7 @@ public class Router implements JSONSerializable {
 
     @Override
     public String toString() {
-        return addr +":"+port;
+        return "["+circuitId+"] - "+addr +":"+port;
     }
 
     /**
