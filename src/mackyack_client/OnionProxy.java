@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.InvalidObjectException;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -117,7 +118,7 @@ public class OnionProxy {
     }
 
     private void pollProxy(boolean async) {
-        if(async) {
+        if(false) {
             // Start the server socket in a separate thread
             Thread serverThread = new Thread(() -> {
                 poll();
@@ -138,31 +139,35 @@ public class OnionProxy {
 
                 // Determine if the packet is handled at the Proxy Layer or at the ApplicationService Layer
                 JSONObject obj = JsonIO.readObject(reader.readLine());
-
-                if(obj.containsKey("type")) {
-                    // TODO
-                    // If this is a CreatedCell, then handle.
-                    switch(obj.getString("type")) {
-                        case "CREATED": {
-                            handleCreated(new CreatedCell(obj));
-                        }; return; // If we receive a created element, then we want to stop the thread.
-
-                        case "RELAY": {
-                            handleRelay(new RelayCell(obj));
-                        }; return;
-                    }
-                    // ?
-                } else {
-                    ApplicationService.handle(obj);
-                }
-
-
+                handJSONObject(obj);
                 // Protocol is to close the socket after a message has been handled.
                 sock.close();
-            } catch (IOException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+    }
+    private void handJSONObject(JSONObject obj) {
+        try {
+            if(obj.containsKey("type")) {
+                // TODO
+                // If this is a CreatedCell, then handle.
+                switch(obj.getString("type")) {
+                    case "CREATED": {
+                        handleCreated(new CreatedCell(obj));
+                    }; return; // If we receive a created element, then we want to stop the thread.
+
+                    case "RELAY": {
+                        handleRelay(new RelayCell(obj));
+                    }; return;
+                }
+                // ?
+            } else {
+                ApplicationService.handle(obj);
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }  
     }
 
     /**
@@ -174,7 +179,7 @@ public class OnionProxy {
         return circuit.stream().filter(n -> n.getCircuitId() == id).findFirst().orElse(null);
     }
 
-    private void handleRelay(RelayCell relayCell) {
+    private void handleRelay(RelayCell relayCell) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidObjectException, InvalidKeySpecException {
         // If we receive a relay cell, it is wrapping either a CreatedCell or a DataCell.
 
         // Step 1 Decrypt Relay Secret
@@ -186,6 +191,45 @@ public class OnionProxy {
         //      Go to the OR prior to the last one, attempt to decrypt
         //  This is not a great way of handling.
 
+        // We have the variable router_encrypted to determine the router in the circuit that 
+        
+        // When receiving an Onion Router Message it wrapped starting with OR enter's keys
+
+        // Decrypt and handle
+
+        RelayCell message = relayCell;
+        // Loop through all of the OR's 
+        for(int i = 0; i < circuit.size(); i++) {
+            // Router
+            Router router = circuit.get(i);
+
+            // Decrypt the child of the Relay message.
+            String child = OnionProxyUtil.decryptSymmetric(message.getRelaySecret(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
+
+            // Turn into a JSONObject
+            JSONObject obj = JsonIO.readObject(child);
+            
+            if(obj.containsKey("type")) {
+                // TODO
+                // If this is a CreatedCell, then handle.
+                switch(obj.getString("type")) {
+                    case "CREATED": {
+                        handleCreated(new CreatedCell(obj));
+                    }; return; // If we receive a created element, then we want to stop the thread.
+
+                    case "RELAY": {
+                        message = new RelayCell(obj);
+                    }; break;
+
+                    case "DATA": {
+                        // ToDo Handle Data? I believe this is sent to the ApplicationService layer.
+                    }; return;
+                }
+                // ?
+            } else {
+                ApplicationService.handle(obj);
+            }
+        }
     }
 
     /**
@@ -233,8 +277,6 @@ public class OnionProxy {
      * @param port
      */
     public static void constructOperation(JSONSerializable message, String server_addr, int port) {
-
-
 
     }
 

@@ -66,7 +66,7 @@ public class OnionProxyUtil {
         aesCipher.init(Cipher.DECRYPT_MODE, aesKey, iv);
 
         // Encrypt the entire message at once. The doFinal method 
-        byte[] plaintext = aesCipher.doFinal(message.getBytes());
+        byte[] plaintext = aesCipher.doFinal(Base64.getDecoder().decode(message));
 
         return new String(plaintext);
     }
