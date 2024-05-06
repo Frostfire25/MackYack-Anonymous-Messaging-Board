@@ -38,11 +38,11 @@ public class OnionRouter
     private static String configFile = "";   // Default configuration file.
     
     // OR-specific fields:
-    private static ConcurrentHashMap<Integer, Key> keyTable;       // The table used to find symmetric keys based on.
-    private static ConcurrentHashMap<Integer, String> ivTable;     // This.circID -> iv
-    private static ConcurrentHashMap<Integer, Integer> askTable;   // Outgoing circID -> This.circID. Used to lookup the path back to Alice.
-    private static ConcurrentHashMap<Integer, String> inTable;     // This.circID -> SRC OR IP/port combo.
-    private static ConcurrentHashMap<Integer, String> outTable;    // Outgoing circID -> Outgoing OR IP/port combo.
+    private static ConcurrentHashMap<String, Key> keyTable;       // The table used to find symmetric keys based on.
+    private static ConcurrentHashMap<String, String> ivTable;     // This.circID -> iv
+    private static ConcurrentHashMap<String, String> askTable;   // Outgoing circID -> This.circID. Used to lookup the path back to Alice.
+    private static ConcurrentHashMap<String, String> inTable;     // This.circID -> SRC OR IP/port combo.
+    private static ConcurrentHashMap<String, String> outTable;    // Outgoing circID -> Outgoing OR IP/port combo.
     private static PrivateKey privKey;                             // Private key for this OR
 
     /**
@@ -258,37 +258,37 @@ public class OnionRouter
     */
 
     /**
-     * @return static reference to outTable (<Integer, Key>; this.circID -> symmetric key for a particular circuit).
+     * @return static reference to outTable (<String, Key>; this.circID -> symmetric key for a particular circuit).
      */
-    public static ConcurrentHashMap<Integer, Key> getKeyTable() {
+    public static ConcurrentHashMap<String, Key> getKeyTable() {
         return keyTable;
     }
 
     /**
-     * @return static reference to ivTable (<Integer, String>; this.circID -> iv for a particular circuit).
+     * @return static reference to ivTable (<String, String>; this.circID -> iv for a particular circuit).
      */
-    public static ConcurrentHashMap<Integer, String> getIVTable() {
+    public static ConcurrentHashMap<String, String> getIVTable() {
         return ivTable;
     }
 
     /**
-     * @return static reference to askTable (<Integer, Integer>; Outgoing circID -> this.circID for a particular circuit).
+     * @return static reference to askTable (<String, String>; Outgoing circID -> this.circID for a particular circuit).
      */
-    public static ConcurrentHashMap<Integer, Integer> getAskTable() {
+    public static ConcurrentHashMap<String, String> getAskTable() {
         return askTable;
     }
 
     /**
-     * @return static reference to inTable (<Integer, String>; this.circID -> Source OR IP/port combo for a particular circuit).
+     * @return static reference to inTable (<String, String>; this.circID -> Source OR IP/port combo for a particular circuit).
      */
-    public static ConcurrentHashMap<Integer, String> getInTable() {
+    public static ConcurrentHashMap<String, String> getInTable() {
         return inTable;
     }
 
     /**
-     * @return static reference to outTable (<Integer, String>; Outgoing circID -> Outgoing OR IP/port combo for a particular circuit).
+     * @return static reference to outTable (<String, String>; Outgoing circID -> Outgoing OR IP/port combo for a particular circuit).
      */
-    public static ConcurrentHashMap<Integer, String> getOutTable() {
+    public static ConcurrentHashMap<String, String> getOutTable() {
         return outTable;
     }
 
