@@ -102,7 +102,7 @@ public class OnionProxy {
      * @throws UnknownHostException
      * @throws IOException
      */
-    public void send(JSONSerializable message) throws UnknownHostException, IOException {
+    public void send(String message) throws UnknownHostException, IOException {
         // We can only send to the entrance node in a OR scheme.
         // So that's what we'll do
         Router en_Router = getEntryRouter();
@@ -110,7 +110,7 @@ public class OnionProxy {
         Socket sock = new Socket(en_Router.getAddr(), en_Router.getPort());
         BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
-        writer.write(message.serialize());
+        writer.write(message);
         writer.newLine();
         writer.flush();
     }

@@ -23,6 +23,54 @@ import javax.crypto.spec.IvParameterSpec;
 import merrimackutil.util.Pair;
 
 public class OnionProxyUtil {
+
+    /**
+     * Function to encrypt a message given an AES key and 16-bit salt.
+     * @param message String plaintext-message to be encrypted
+     * @param aesKey AES Key that will be used to encrypt the message
+     * @param rawIV byte[] 16-bit IV that is used to make the encryption non-deterministic
+     * @return Result of the encryption as a String.
+
+     */
+    public static String encryptSymmetric(String message, Key aesKey, byte[] rawIV) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException {
+        // Set up an AES cipher object.
+        Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+
+        // Fill array with random bytes.
+        IvParameterSpec iv = new IvParameterSpec(rawIV);
+                                          
+        // Put the cipher in encrypt mode with the generated key 
+        aesCipher.init(Cipher.ENCRYPT_MODE, aesKey, iv);
+
+        // Encrypt the entire message at once. The doFinal method 
+        byte[] ciphertext = aesCipher.doFinal(message.getBytes());
+
+        return Base64.getEncoder().encodeToString(ciphertext);
+    }
+
+    /**
+     * Function to decrypt a message given an AES key and 16-bit salt.
+     * @param message String plaintext-message to be encrypted
+     * @param aesKey AES Key that will be used to encrypt the message
+     * @param rawIV byte[] 16-bit IV that is used to make the encryption non-deterministic
+     * @return Result of the decryption as a String
+     */
+    public static String decryptSymmetric(String message, Key aesKey, byte[] rawIV) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException {
+        // Set up an AES cipher object.
+        Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+
+        // Fill array with random bytes.
+        IvParameterSpec iv = new IvParameterSpec(rawIV);
+                                          
+        // Put the cipher in encrypt mode with the generated key 
+        aesCipher.init(Cipher.DECRYPT_MODE, aesKey, iv);
+
+        // Encrypt the entire message at once. The doFinal method 
+        byte[] plaintext = aesCipher.doFinal(message.getBytes());
+
+        return new String(plaintext);
+    }
+
     /**
      * Decodes from Base64 encoding and returns Public Key object.
      * 
