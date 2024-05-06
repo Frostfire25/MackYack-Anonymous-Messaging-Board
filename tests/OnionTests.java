@@ -85,7 +85,7 @@ public class OnionTests {
             try {
                 ServerSocket server = new ServerSocket(5010); // Setting up server for p2p testing
                 Socket sock = server.accept();
-                OnionRouterService ors = new OnionRouterService(keyTable, fwdTable, sock, privKey);
+                OnionRouterService ors = new OnionRouterService(sock);
                 ors.run();
             } catch (IOException e) {
                 e.printStackTrace();

@@ -35,9 +35,12 @@ public class OnionRouter
     private static String configFile = "";   // Default configuration file.
     
     // OR-specific fields:
-    private static ConcurrentHashMap<Integer, Key> keyTable;      // Used for looking up symmetric keys associated with circuit IDs.
-    private static ConcurrentHashMap<String, Integer> fwdTable;      // Used for finding + forwarding the proper circuit ID to the next OR in the sequence.
-    private static PrivateKey privKey;
+    private static ConcurrentHashMap<Integer, Key> keyTable;       // The table used to find symmetric keys based on.
+    private static ConcurrentHashMap<Integer, String> ivTable;     // This.circID -> iv
+    private static ConcurrentHashMap<Integer, Integer> askTable;   // Outgoing circID -> This.circID. Used to lookup the path back to Alice.
+    private static ConcurrentHashMap<Integer, String> inTable;     // This.circID -> SRC OR IP/port combo.
+    private static ConcurrentHashMap<Integer, String> outTable;    // Outgoing circID -> Outgoing OR IP/port combo.
+    private static PrivateKey privKey;                             // Private key for this OR
 
     /**
      * Prints the usage to the screen and exits.
@@ -193,16 +196,19 @@ public class OnionRouter
 
         // Initialize the private key as a PrivateKey object.
         try {
-            privKey = getPrivateKey("ElGamal", conf.getPrivateKey());
+            privKey = convertToPrivateKey("ElGamal", conf.getPrivateKey());
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             System.err.println("Error deserializing private key for this OR.");
             e.printStackTrace();
             
         }
 
-        // Initialize the maps
+        // Initialize the tables
         keyTable = new ConcurrentHashMap<>();
-        fwdTable = new ConcurrentHashMap<>();
+        ivTable = new ConcurrentHashMap<>();
+        askTable = new ConcurrentHashMap<>();
+        inTable = new ConcurrentHashMap<>();
+        outTable = new ConcurrentHashMap<>();
 
         // Initialize the router's "Server" capability (AKA allow for incoming connections)
         ServerSocket server = new ServerSocket(conf.getPort());
@@ -211,7 +217,7 @@ public class OnionRouter
 
         while(true) {
             Socket sock = server.accept();
-            Thread ORServiceThread = new Thread(new OnionRouterService(keyTable, fwdTable, sock, privKey));
+            Thread ORServiceThread = new Thread(new OnionRouterService(sock));
             ORServiceThread.start();
         }
     }
@@ -224,7 +230,7 @@ public class OnionRouter
      * @throws NoSuchAlgorithmException 
      * @throws InvalidKeySpecException 
      */
-    private static PrivateKey getPrivateKey(String algorithm, String str) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    private static PrivateKey convertToPrivateKey(String algorithm, String str) throws NoSuchAlgorithmException, InvalidKeySpecException {
         // Decode the base64 encoded private key string
         byte[] privateKeyBytes = Base64.getDecoder().decode(str);
 
@@ -236,5 +242,52 @@ public class OnionRouter
 
         // Generate the PrivateKey object using the KeyFactory
         return keyFactory.generatePrivate(keySpec);
+    }
+
+
+    /*
+        Accessors
+    */
+
+    /**
+     * @return static reference to outTable (<Integer, Key>; this.circID -> symmetric key for a particular circuit).
+     */
+    public static ConcurrentHashMap<Integer, Key> getKeyTable() {
+        return keyTable;
+    }
+
+    /**
+     * @return static reference to ivTable (<Integer, String>; this.circID -> iv for a particular circuit).
+     */
+    public static ConcurrentHashMap<Integer, String> getIVTable() {
+        return ivTable;
+    }
+
+    /**
+     * @return static reference to askTable (<Integer, Integer>; Outgoing circID -> this.circID for a particular circuit).
+     */
+    public static ConcurrentHashMap<Integer, Integer> getAskTable() {
+        return askTable;
+    }
+
+    /**
+     * @return static reference to inTable (<Integer, String>; this.circID -> Source OR IP/port combo for a particular circuit).
+     */
+    public static ConcurrentHashMap<Integer, String> getInTable() {
+        return inTable;
+    }
+
+    /**
+     * @return static reference to outTable (<Integer, String>; Outgoing circID -> Outgoing OR IP/port combo for a particular circuit).
+     */
+    public static ConcurrentHashMap<Integer, String> getOutTable() {
+        return outTable;
+    }
+
+    /**
+     * @return Private Key object representation of the OR's private key.
+     */
+    public static PrivateKey getPrivKey() {
+        return privKey;
     }
 }
