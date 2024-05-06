@@ -2,8 +2,7 @@
 
 ## MackYack Protocol
 
-### OnionProxy
- 
+
 
 ### Client Functionality
 ---
@@ -11,6 +10,36 @@
 - Requests to the server are made periodically (every 3 seconds) to update the client's local view of the MackYack board.
 - Anonymity is maintained by sending requests through an Onion Routing overlay network
     - Onion Routing overlay network is accessed via. an Onion Proxy. More details in "Onion Routing Protocol" section.
+
+### OnionProxy (Client)
+The `OnionProxy` class serves as a Proxy within an Onion Routing Network, facilitating communication between a client and an Entrance Onion Router. It manages the establishment of secure communication channels between nodes, message relay, and message reception.
+
+#### Methods
+
+### `public OnionProxy(RoutersConfig routersConfig, ClientConfig conf) throws Exception`
+This constructor initializes the Onion Routing System. It requires configurations for routers and clients. Upon instantiation, it constructs the circuit, generates relay messages to initiate circuit keys, and starts polling for new messages on the proxy.
+
+### `public void send(JSONSerializable message) throws UnknownHostException, IOException`
+This method sends a message to the Entrance Onion Router. It takes a `JSONSerializable` message and transmits it to the entry node in the onion routing scheme.
+
+### `private void pollProxy()`
+By starting a server socket in a separate thread, this method continuously polls for new messages on the proxy. Messages are routed either to the Proxy Layer or the ApplicationService Layer for handling.
+
+### `private void handleCreated(CreatedCell createdCell)`
+Upon receiving a created cell from the Onion Router, this method handles it appropriately.
+
+### `private List<JSONSerializable> createRelays(List<CreateCell> createCells)`
+For each cell, this method constructs relay messages to be sent to the entry node. Each CreateCell corresponds to a router in the circuit.
+
+### `private List<CreateCell> constructCreateCells() throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException`
+This method builds CreateCells for each router in the circuit. It generates the first half of the Diffie-Hellman Key Exchange, encrypts it, and creates a CreateCell.
+
+### `private void constructCircuit() throws Exception`
+By shuffling and selecting a specified number of routers from the provided configuration, this method constructs the circuit for the Onion Routing System.
+
+### `public Router getEntryRouter()`
+This method returns the entry router of the circuit, facilitating access to the starting point of the communication pathway.
+
 
 ### Server Functionality
 ---
@@ -29,6 +58,14 @@ Properties:
     - String - data
 ```
 
+1. Put Response
+```
+Server -> Client
+Response sent to client to assure that their message has been added to the board.
+
+Properties: (none)
+```
+
 2. Get Request
 ```
 Client -> Server
@@ -39,7 +76,7 @@ Properties: (none)
 
 3. Get Response
 ```
-Client -> Server
+Server -> Client
 Sent from the Server through the circuit to the Client responding with all of the Messages on the Board.
 
 Properties:

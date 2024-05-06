@@ -34,8 +34,8 @@ import merrimackutil.json.JSONSerializable;
 import merrimackutil.json.JsonIO;
 import merrimackutil.json.types.JSONObject;
 import merrimackutil.util.Pair;
-import onionrouting.OnionRouterService;
 import onionrouting.onionrouter_cells.CreateCell;
+import onionrouting.onionrouter_cells.CreatedCell;
 import onionrouting.onionrouter_cells.RelayCell;
 
 public class OnionProxy {
@@ -124,6 +124,11 @@ public class OnionProxy {
                     if(obj.containsKey("type")) {
                         // TODO
                         // If this is a CreatedCell, then handle.
+                        switch(obj.getString("type")) {
+                            case "CREATED": {
+                                handleCreated(new CreatedCell(obj));
+                            }; break;
+                        }
                         // ?
                     } else {
                         ApplicationService.handle(obj);
@@ -138,6 +143,14 @@ public class OnionProxy {
             }
         });
         serverThread.start(); // Start the server thread
+    }
+
+    /**
+     * Handles the created cell
+     * @param createdCell
+     */
+    private void handleCreated(CreatedCell createdCell) {
+
     }
 
     /**
@@ -227,8 +240,4 @@ public class OnionProxy {
         for(int i = 0; i < ROUTER_COUNT; i++)
             circuit.add(copy.get(i));
     }
-
-
-
-
 }
