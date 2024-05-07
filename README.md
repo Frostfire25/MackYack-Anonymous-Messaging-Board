@@ -10,13 +10,6 @@
 ## MackYack Protocol
 
 
-### Client Functionality
----
-- Message is sent to the server, where it is added to the MackYack board.
-- Requests to the server are made periodically (every 3 seconds) to update the client's local view of the MackYack board.
-- Anonymity is maintained by sending requests through an Onion Routing overlay network
-    - Onion Routing overlay network is accessed via. an Onion Proxy. More details in "Onion Routing Protocol" section.
-
 ## Application Layer
 ---
 MackYack is designed to be an anonymous messaging board system. We have created a Client Server model for handling operations on the board.
@@ -27,6 +20,13 @@ Client is allowed to receive messages on the board and update new messages on th
  ![Application workflow](./images/application-workflow.png) 
 
 </p>
+
+#### Client Functionality
+---
+- Message is sent to the server, where it is added to the MackYack board.
+- Requests to the server are made periodically (every 3 seconds) to update the client's local view of the MackYack board.
+- Anonymity is maintained by sending requests through an Onion Routing overlay network
+    - Onion Routing overlay network is accessed via. an Onion Proxy. More details in "Onion Routing Protocol" section.
 
 There exists three commands in our Client-side application.
  - `GET` - Constructs and sends a GetRequest
