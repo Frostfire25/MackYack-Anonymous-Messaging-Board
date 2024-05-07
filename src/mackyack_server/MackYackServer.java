@@ -1,9 +1,15 @@
 package mackyack_server;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.InvalidObjectException;
+import java.io.OutputStreamWriter;
 import java.security.NoSuchAlgorithmException;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 import merrimackutil.cli.LongOption;
 import merrimackutil.cli.OptionParser;
@@ -173,7 +179,21 @@ public class MackYackServer
         // TODO: Server implementation
         System.out.println("Mack Yack Server built successfully.");
 
-        // We don't care about our threads, just crudely shutdown.
-        System.exit(0);
+        ServerSocket server = new ServerSocket(conf.getPort());
+
+        while(true) {
+            Socket sock = server.accept();
+            BufferedReader input = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+            BufferedWriter output = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
+
+            String msg = input.readLine();
+            System.out.println("Message received: " + msg);
+
+            output.write(msg);
+            output.newLine();
+            output.close();
+
+            sock.close();
+        }
     }
 }

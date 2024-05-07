@@ -6,7 +6,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import java.security.Security;
 import merrimackutil.cli.LongOption;
 import merrimackutil.cli.OptionParser;
+import merrimackutil.json.JSONSerializable;
+import merrimackutil.json.types.JSONObject;
 import merrimackutil.util.Tuple;
+import onionrouting.onionrouter_cells.DataCell;
 
 
 /**
@@ -16,7 +19,7 @@ public class MackYackClient
 {
     public static boolean doHelp = false;                       // True if help option present.
     private static ClientConfig conf = null;                    // The configuration information.
-    private static String configFile = "client-config.json";    // Default configuration file.
+    private static String configFile = "configs/client-config.json";    // Default configuration file.
     private static RoutersConfig routersConfig;
 
     private static OnionProxy proxy;
@@ -136,6 +139,14 @@ public class MackYackClient
 
         // TODO: Client implementation
         System.out.println("Mack Yack Client built successfully.");
+
+        JSONObject obj = new JSONObject();
+        obj.put("greetings", "Hello, World!");
+        DataCell cell = new DataCell(conf.getServerAddr(), conf.getServerPort(), obj);
+
+        JSONSerializable toSend = proxy.constructOperation(cell, conf.getServerAddr(), conf.getServerPort());
+
+        proxy.send(toSend.serialize());
 
         // We don't care about our threads, just crudely shutdown.
         System.exit(0);

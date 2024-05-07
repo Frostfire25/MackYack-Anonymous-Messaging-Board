@@ -51,8 +51,6 @@ import org.bouncycastle.util.encoders.Base64Encoder;
 public class OnionRouterService implements Runnable {
 
     private Socket inSock; // The incoming socket connection to this OR.
-    private String inSockAddr; // The incoming socket's address.
-    private int inSockPort; // The incoming socket's port.
 
     /**
      * Constructor for the threaded service implementation of the OnionRouter. This
@@ -62,8 +60,6 @@ public class OnionRouterService implements Runnable {
      */
     public OnionRouterService(Socket inSock) {
         this.inSock = inSock;
-        this.inSockAddr = inSock.getInetAddress().getHostAddress();
-        this.inSockPort = inSock.getPort();
 
         // Initialize the BCProvider
         Security.addProvider(new BouncyCastleProvider());
@@ -120,6 +116,12 @@ public class OnionRouterService implements Runnable {
                         DestroyCell destroyCell = new DestroyCell(obj);
 
                         doDestroy(destroyCell);
+                        break;
+                    case "DATA":
+                        DataCell dataCell = new DataCell(obj);
+
+                        // 1. Find out the destination
+
                         break;
                     default:
                         System.err.println("Unknown cell type. Closing socket...");
@@ -187,7 +189,23 @@ public class OnionRouterService implements Runnable {
                     OnionRouter.getOutTable().put(outCircID, addr + ":" + port);
                     OnionRouter.getAskTable().put(outCircID, circID);
 
+                    // Also need to overwrite the srcAddr + srcPort fields
+                    child.put("srcAddr", OnionRouter.getAddr());
+                    child.put("srcPort", OnionRouter.getPort());
+
                     System.out.println("Create cell identified from this Relay cell: Added necessary info to outTable/askTable.");
+                }
+                else if(child.getString("type").equals("DATA")) {
+                    try {
+                        DataCell dataCell = new DataCell(child);
+                        addr = dataCell.getServerAddr();
+                        port = dataCell.getServerPort();
+
+                        sendToServer(dataCell.getChild().toJSON(), addr, port, circID);
+                    } catch (InvalidObjectException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                 }
             }
 
@@ -199,35 +217,16 @@ public class OnionRouterService implements Runnable {
         }
         // b. If it's returning TO Alice (i.e. the circID is in the outTable).
         else if (OnionRouter.getOutTable().containsKey(circID)) {
-            // 1. Get this.circID from the outgoing circID ("outgoing" in this context means we're receiving a returning RelayCell)
-            String thisCircID = OnionRouter.getAskTable().get(circID);
-            if(thisCircID == null) {
-                System.err.print("Could not find this.circID from the askTable.");
-                return;
-            }
+            // 1. Package it in a RelayCell
+            RelayCell retCell = packageInRelayCell(cell);
 
-            // 2. Use this.circID to get the iv + key. We will use these to encrypt
-            String iv = OnionRouter.getIVTable().get(thisCircID);
-            byte[] rawIV = Base64.getDecoder().decode(iv);
-            Key key = OnionRouter.getKeyTable().get(thisCircID);
-
-            // 3. Encrypt the RelayCell and package it into a RelaySecret (will be wrapped in another RelayCell).
-            RelaySecret secret = new RelaySecret("", 0, (JSONObject) cell.toJSONType());
-            String ctextSecret = null;
-            try {
-                ctextSecret = encryptSymmetric(secret.serialize(), key, rawIV);
-            } catch (Exception e) {
-                System.err.println("Unable to encrypt returning RelayCell message");
-                return;
-            }
-            // 4. Get the addr/port of the previous node from the inTable
-            String addrPortCombo = OnionRouter.getInTable().get(thisCircID);
+            // 2. Get the addr/port of the previous node from the inTable
+            String addrPortCombo = OnionRouter.getInTable().get(retCell.getCircID());
             String[] segments = addrPortCombo.split(":");
             String addr = segments[0];
             int port = Integer.parseInt(segments[1]);
 
-            // 5. Package it in a RelayCell, and send it off
-            RelayCell retCell = new RelayCell(thisCircID, iv, ctextSecret);
+            // 3. Send it off!
             sendToDestination(retCell.serialize(), addr, port);
         }
         // c. Else, drop it
@@ -261,7 +260,7 @@ public class OnionRouterService implements Runnable {
         // with all empty fields and return.
         if (gX == null) {
             CreatedCell retCell = new CreatedCell("", "", "");
-            sendToDestination(retCell.serialize(), inSockAddr, inSockPort);
+            sendToDestination(retCell.serialize(), cell.getSrcAddr(), cell.getSrcPort());
             return;
         }
 
@@ -294,14 +293,14 @@ public class OnionRouterService implements Runnable {
 
         // 4. Store circID + key K in table. Also store incoming connection + circID in inTable
         OnionRouter.getKeyTable().put(cell.getCircID(), new SecretKeySpec(sharedSecret, "AES"));
-        System.out.println("Added [" + inSockAddr + ":" + inSockPort + "] to inTable.");
-        OnionRouter.getInTable().put(cell.getCircID(), inSockAddr + ":" + inSockPort);
+        OnionRouter.getInTable().put(cell.getCircID(), cell.getSrcAddr() + ":" + cell.getSrcPort());
+        System.out.println("Added [" + cell.getSrcAddr() + ":" + cell.getSrcPort() + "] to inTable.");
 
         System.out.println("sending Created message");
 
         // Package in CreatedCell and return it back.
         CreatedCell retCell = new CreatedCell(gY, kHash, cell.getCircID());
-        sendToDestination(retCell.serialize(), inSockAddr, inSockPort);
+        sendToDestination(retCell.serialize(), cell.getSrcAddr(), cell.getSrcPort());
         
         System.out.println("Created message sent");
     }
@@ -309,20 +308,24 @@ public class OnionRouterService implements Runnable {
     /**
      * Performs all the operations to be done on a Created cell when received.
      * 
+     * Steps:
+     * 1. Encapsulate in a RelayCell
+     * 2. Send back the RelayCell
+     * 
      * @param cell cell we're performing the operation on.
      */
     private void doCreated(CreatedCell cell) {
-        // TODO: CREATED
+         // 1. Package it in a RelayCell
+         RelayCell retCell = packageInRelayCell(cell);
 
-        /*
-         * Steps:
-         * 1. Encapsulate in an ExtendedCell
-         * 2. Send back the ExtendedCell
-         * 
-         * Notes: CREATE and CREATED are sent + received by the last OR before the
-         * extension occurs.
-         * Additionally, sending BACK a cell is simple. inSockOut.println(ExtendedCell);
-         */
+         // 2. Get the addr/port of the previous node from the inTable
+         String addrPortCombo = OnionRouter.getInTable().get(retCell.getCircID());
+         String[] segments = addrPortCombo.split(":");
+         String addr = segments[0];
+         int port = Integer.parseInt(segments[1]);
+
+         // 3. Send it off!
+         sendToDestination(retCell.serialize(), addr, port);
     }
 
     /**
@@ -347,6 +350,66 @@ public class OnionRouterService implements Runnable {
     /*
      * Helper methods
      */
+
+     /**
+      * Packages some abstract cell into a RelayCell. 
+      *
+      * @param cell some cell we want to package.
+      * @return RelayCell encapsulating the input cell, or null if a failure occurred.
+      */
+    public RelayCell packageInRelayCell(Cell cell) {
+        // 1. Get this.circID from the outgoing circID ("outgoing" in this context means we're receiving a returning RelayCell)
+        String thisCircID = OnionRouter.getAskTable().get(cell.getCircID());
+        if(thisCircID == null) {
+            System.err.print("Could not find this.circID from the askTable.");
+            return null;
+        }
+
+        // 2. Use this.circID to get the iv + key. We will use these to encrypt
+        String iv = OnionRouter.getIVTable().get(thisCircID);
+        byte[] rawIV = Base64.getDecoder().decode(iv);
+        Key key = OnionRouter.getKeyTable().get(thisCircID);
+
+        // 3. Encrypt the RelayCell and package it into a RelaySecret (will be wrapped in another RelayCell).
+        RelaySecret secret = new RelaySecret("", 0, (JSONObject) cell.toJSONType());
+        String ctextSecret = null;
+        try {
+            ctextSecret = encryptSymmetric(secret.serialize(), key, rawIV);
+        } catch (Exception e) {
+            System.err.println("Unable to encrypt returning RelayCell message");
+            return null;
+        }
+        
+        // 4. Return the RelayCell
+        return new RelayCell(thisCircID, iv, ctextSecret);
+    }
+
+    /**
+     * Overloaded method of packaging something into a RelayCell by providing an abstract JSONObject and the circID of this OR.
+     * 
+     * @param obj object to encapsulate.
+     * @param circID circID of this OR
+     * @return RelayCell encapsulation or null if an error occurred.
+     */
+    public RelayCell packageInRelayCell(JSONObject obj, String circID) {
+        // 1. Use this.circID to get the iv + key. We will use these to encrypt
+        String iv = OnionRouter.getIVTable().get(circID);
+        byte[] rawIV = Base64.getDecoder().decode(iv);
+        Key key = OnionRouter.getKeyTable().get(circID);
+
+        // 2. Encrypt the RelayCell and package it into a RelaySecret (will be wrapped in another RelayCell).
+        RelaySecret secret = new RelaySecret("", 0, obj);
+        String ctextSecret = null;
+        try {
+            ctextSecret = encryptSymmetric(secret.serialize(), key, rawIV);
+        } catch (Exception e) {
+            System.err.println("Unable to encrypt returning RelayCell message");
+            return null;
+        }
+        
+        // 3. Return the RelayCell
+        return new RelayCell(circID, iv, ctextSecret);
+    }
 
      /**
      * Function to encrypt a message given an AES key and 16-bit salt.
@@ -450,17 +513,52 @@ public class OnionRouterService implements Runnable {
     private void sendToDestination(String msg, String addr, int port) {
         try {
             // Create a socket and bind it to the specified port
-            Socket socket = new Socket();
-            socket.bind(new InetSocketAddress(OnionRouter.getPort()));
-
-            // Connect the socket to the remote server
-            socket.connect(new InetSocketAddress(addr, port));
+            Socket socket = new Socket(addr, port);
 
             // Send it out
             BufferedWriter output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             output.write(msg);
             output.newLine();
             output.close();
+            
+            // Close the socket when done
+            socket.close();
+        } catch (IOException e) {
+            System.err.println("Could not send message to: [" + addr + ":" + port + "].");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Sends a message to a particular server (based on IP/port combo) and expects a result.
+     * 
+     * @param msg Message to send.
+     * @param addr Address to send to.
+     * @param port Port to send to.
+     */
+    private void sendToServer(String msg, String addr, int port, String circID) {
+        try {
+            // Create a socket and bind it to the specified port
+            Socket socket = new Socket(addr, port);
+
+            // Send it out
+            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            BufferedWriter output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+            output.write(msg);
+            output.newLine();
+            output.close();
+
+            // Wait for the response
+            String res = input.readLine();
+
+            // Package it in a RelayCell and send it off!
+            RelayCell cell = packageInRelayCell(JsonIO.readObject(res), circID);
+
+            // Get the address and port using the circID
+            String[] segments = OnionRouter.getInTable().get(circID).split(":");
+            String retAddr = segments[0];
+            int retPort = Integer.parseInt(segments[1]);
+            sendToDestination(cell.serialize(), retAddr, retPort);
             
             // Close the socket when done
             socket.close();

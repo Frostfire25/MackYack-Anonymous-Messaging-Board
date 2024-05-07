@@ -109,4 +109,12 @@ public class DataCell implements JSONSerializable {
         return child;
     }
 
+    public String getServerAddr() {
+        return serverAddr;
+    }
+
+    public int getServerPort() {
+        return serverPort;
+    }
+
 }

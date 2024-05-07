@@ -11,10 +11,9 @@ import merrimackutil.json.types.JSONType;
  * Sent from Client to the first OR in the circuit but forwarded to the last OR
  * in the circuit to extend the circuit by another node.
  */
-public class RelayCell implements JSONSerializable {
+public class RelayCell extends Cell {
 
     private final String type = "RELAY";
-    private String circID; 
     private String base64_IV;
     private String relaySecret;
 
@@ -102,11 +101,6 @@ public class RelayCell implements JSONSerializable {
         obj.put("relaySecret", relaySecret);
 
         return obj;
-    }
-
-
-    public String getCircID() {
-        return circID;
     }
 
     public String getIV() {

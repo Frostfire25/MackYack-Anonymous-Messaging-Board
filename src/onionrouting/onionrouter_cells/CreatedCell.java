@@ -11,12 +11,11 @@ import merrimackutil.json.types.JSONType;
  * Sent from the first onion router to the client confirming the creation of a
  * circuit.
  */
-public class CreatedCell implements JSONSerializable {
+public class CreatedCell extends Cell {
 
     private final String type = "CREATED";
     private String gY;          // Base 64-encoded second half of Diffie-Hellman KEX.
     private String kHash;       // Base 64-encoded SHA-3 256 hash: H(K || "handshake").
-    private String circId;         // CircID associated with the OR.
 
     /**
      * Default constructor to initialize a returning CreatedCell object.
@@ -24,10 +23,10 @@ public class CreatedCell implements JSONSerializable {
      * @param gY Base 64-encoded second half of Diffie-Hellman KEX.
      * @param kHash Base 64-encoded SHA-3 256 hash: H(K || "handshake").
      */
-    public CreatedCell(String gY, String kHash, String circId) {
+    public CreatedCell(String gY, String kHash, String circID) {
         this.gY = gY;
         this.kHash = kHash;
-        this.circId = circId;
+        this.circID = circID;
     }
 
     /**
@@ -66,10 +65,10 @@ public class CreatedCell implements JSONSerializable {
             else
                 kHash = message.getString("kHash");
 
-            if (!message.containsKey("circId"))
-                throw new InvalidObjectException("Created needs a circId.");
+            if (!message.containsKey("circID"))
+                throw new InvalidObjectException("Created needs a circID.");
             else
-                circId = message.getString("circId");
+                circID = message.getString("circID");
 
             if (message.size() > 4)
                 throw new InvalidObjectException("Superflous fields");
@@ -98,7 +97,7 @@ public class CreatedCell implements JSONSerializable {
         obj.put("type", type);
         obj.put("gY", gY);
         obj.put("kHash", kHash);
-        obj.put("circId", circId);
+        obj.put("circID", circID);
 
         return obj;
     }
@@ -106,10 +105,6 @@ public class CreatedCell implements JSONSerializable {
     /**
      * Accessors
      */
-
-    public String getCircId() {
-        return circId;
-    }
 
     public String getType() {
         return type;

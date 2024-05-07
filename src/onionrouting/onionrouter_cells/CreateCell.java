@@ -10,24 +10,42 @@ import merrimackutil.json.types.JSONType;
  * Client -> First OR
  * Sent from Client to the first onion router to create a circuit.
  */
-public class CreateCell implements JSONSerializable {
+public class CreateCell extends Cell {
 
     private final String type = "CREATE";
-    private String circID; // UUID
     private String gX; // Base 64-encoded first half of Diffie-Hellman KEX encrypted in the ephemeral key.
     private String encryptedSymKey; // Base 64-encoded ephemeral key (symmetric) encrypted in the OR's public key.
+    private String srcAddr; // The address from which this cell  was sent
+    private int srcPort; // The port from which this cell was sent
 
     /**
      * Default constructor to initialize an outgoing CreateCell object.
      * 
      * @param gX Encrypted Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
      * @param circID circuit ID
-     * @param Encrypted Symmetric Key used to decrypt gX
+     * @param encryptedSymKey Symmetric Key used to decrypt gX
      */
     public CreateCell(String gX, String circID, String encyptedSymKey) {
         this.gX = gX;
         this.circID = circID;
         this.encryptedSymKey = encyptedSymKey;
+    }
+
+    /**
+     * Overloaded constructor to initalize an outgoing CreateCell object w/ the srcAddr/srcPort info.
+     * 
+     * @param gX Encrypted Base 64-encoded first half of Diffie-Hellman KEX encrypted in the OR's public Key.
+     * @param circID circuit ID
+     * @param encyptedSymKey Symmetric Key used to decrypt gX
+     * @param srcAddr source address
+     * @param srcPort source port
+     */
+    public CreateCell(String gX, String circID, String encyptedSymKey, String srcAddr, int srcPort) {
+        this.gX = gX;
+        this.circID = circID;
+        this.encryptedSymKey = encyptedSymKey;
+        this.srcAddr = srcAddr;
+        this.srcPort = srcPort;
     }
     
     /**
@@ -61,6 +79,16 @@ public class CreateCell implements JSONSerializable {
             else
                 circID = message.getString("circID");
 
+            if (!message.containsKey("srcAddr"))
+                throw new InvalidObjectException("Create needs a srcAddr.");
+            else
+                srcAddr = message.getString("srcAddr");
+
+            if (!message.containsKey("srcPort"))
+                throw new InvalidObjectException("Create needs a srcPort.");
+            else
+                srcPort = message.getInt("srcPort");
+
             if (!message.containsKey("gX"))
                 throw new InvalidObjectException("Create needs a gX.");
             else
@@ -72,7 +100,7 @@ public class CreateCell implements JSONSerializable {
                 encryptedSymKey = message.getString("encryptedSymKey");
                 
 
-            if (message.size() > 4)
+            if (message.size() > 6)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -99,6 +127,8 @@ public class CreateCell implements JSONSerializable {
         obj.put("type", type);
         obj.put("circID", circID);
         obj.put("gX", gX);
+        obj.put("srcAddr", srcAddr);
+        obj.put("srcPort", srcPort);
         obj.put("encryptedSymKey", encryptedSymKey);
 
         return obj;
@@ -108,15 +138,27 @@ public class CreateCell implements JSONSerializable {
         return type;
     }
 
-    public String getCircID() {
-        return circID;
-    }
-
     public String getgX() {
         return gX;
     }
 
+    public String getSrcAddr() {
+        return srcAddr;
+    }
+
+    public int getSrcPort() {
+        return srcPort;
+    }
+
     public String getEncryptedSymKey() {
         return encryptedSymKey;
+    }
+
+    public void setSrcAddr(String srcAddr) {
+        this.srcAddr = srcAddr;
+    }
+
+    public void setSrcPort(int srcPort) {
+        this.srcPort = srcPort;
     }
 }

@@ -15,6 +15,7 @@ import merrimackutil.json.types.JSONType;
 public class OnionRouterConfig implements JSONSerializable {
 
     private String privateKey;
+    private String addr;
     private int port;
 
     public OnionRouterConfig(String path) throws FileNotFoundException, InvalidObjectException {
@@ -51,6 +52,12 @@ public class OnionRouterConfig implements JSONSerializable {
             throw new InvalidObjectException("Expected a Config object -- privKey expected.");
         }
 
+        if (obj.containsKey("addr")) {
+            this.addr = obj.getString("addr");
+        } else {
+            throw new InvalidObjectException("Expected a Config object -- addr expected.");
+        }
+
         if (obj.containsKey("port")) {
             this.port = obj.getInt("port");
         } else {
@@ -62,6 +69,7 @@ public class OnionRouterConfig implements JSONSerializable {
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
         obj.put("privKey", this.privateKey);
+        obj.put("addr", this.addr);
         obj.put("port", this.port);
         return obj; // We are never reading this file to JSON.
     }
@@ -73,6 +81,10 @@ public class OnionRouterConfig implements JSONSerializable {
 
     public String getPrivateKey() {
         return privateKey;
+    }
+
+    public String getAddr() {
+        return addr;
     }
 
     public int getPort() {
