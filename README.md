@@ -110,7 +110,16 @@ Initiates the polling mechanism for new messages on the proxy.
 ---
 `TODO`
 
-### Cells (Messages)
+### Symmetric Key Creation Handleing
+
+### Relay Handling
+
+### Data Handling
+There are two streets to talk about when handling data messages.
+
+### Destroy Handleing
+
+## Cells (Messages)
 ---
 
 1. Create
