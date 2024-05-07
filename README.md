@@ -108,16 +108,25 @@ Initiates the polling mechanism for new messages on the proxy.
 
 ## Onion Routing Protocol
 ---
-`TODO`
 
-### Symmetric Key Creation Handleing
+`TODO:`
 
-### Relay Handling
+### Onion Routing Service
+ 
+The OnionRouterService class serves as a handler for messages directed to an onion router, onion proxy, or web server; managing various tables and cryptographic operations. It operates within a threaded service model, handling incoming messages via the run() method. Upon receiving different types of cells, such as Relay, Create, Created, and Destroy, it executes corresponding actions like relaying messages, creating connections, acknowledging creations, or managing destructions. It employs cryptographic functions for encryption and decryption, including AES encryption for message security. Additionally, it facilitates communication with other nodes in the network by sending messages to specified destinations or servers. Overall, OnionRouterService provides essential functionalities for the operation of an onion router within a network architecture.
 
-### Data Handling
-There are two streets to talk about when handling data messages.
+#### Symmetric Key Creation Handleing
 
-### Destroy Handleing
+#### Relay Handling
+
+#### Data Handling
+`Onion Peeling Messages (Request)`
+ - When a message is being sent from the `Client` → `Server` it can be defined as a Onion Peeling Message in our application. This is because the onion is being peeled. The last message in the onion should be a Data message. 
+ - Data Messages are destined for some server outside of the onion network (OR). 
+ - To handle, the message is directed to the server outside of the OR.
+ - Unfortunately, as Onion Routing paper left what we consider to be a security flaw in place. The exit onion router is able to see the plain-text information of what is contained inside a `DATA` message. This is not something we address in our service. Though we have have planned to encrypt the data child (plain-text to be sent to server) as a data secret much like we do for Relay messages. Though this time using the servers public key which is defined on startup. 
+
+#### Destroy Handling
 
 ## Cells (Messages)
 ---

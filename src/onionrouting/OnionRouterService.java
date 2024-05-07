@@ -4,19 +4,14 @@ import merrimackutil.json.JsonIO;
 import merrimackutil.json.types.JSONObject;
 import onionrouting.onionrouter_cells.*;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Scanner;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.InvalidObjectException;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Base64;
-import java.net.InetSocketAddress;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -29,7 +24,6 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.PrivateKey;
 import java.security.Key;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
