@@ -7,15 +7,21 @@
 
 </p>
 
-## MackYack Protocol
-
-
-### Client Functionality
+## Information 
 ---
-- Message is sent to the server, where it is added to the MackYack board.
-- Requests to the server are made periodically (every 3 seconds) to update the client's local view of the MackYack board.
-- Anonymity is maintained by sending requests through an Onion Routing overlay network
-    - Onion Routing overlay network is accessed via. an Onion Proxy. More details in "Onion Routing Protocol" section.
+MackYack is an innovative anonymous messaging board system leveraging Onion Routing for enhanced privacy. Operating on a Client-Server model, MackYack allows clients to receive and update messages on the board while the server manages board state and message updates. Anonymity is preserved through Onion Routing, achieved via an Onion Proxy. The system's architecture includes an OnionProxy facilitating communication between clients and the Onion Routing network, ensuring secure message relay and reception. Our application utilizes TCP as the transport layer protocol to assure reliable message delivery.
+
+## Onion Routing Summary
+---
+Onion Routing is a technique used to achieve anonymous communication over a network by routing data through a series of intermediate nodes, known as onion routers, in a layered manner. Each layer of encryption is peeled off at each successive router, revealing the next destination, hence the name "onion." This method ensures that no single node along the route can determine both the sender and the recipient of the message. By encrypting data multiple times and routing it through several nodes, Onion Routing provides a high level of anonymity and privacy for users. In MackYack, Onion Routing is utilized to anonymize communication between clients and the server, enhancing the confidentiality of messages exchanged on the platform.
+
+Our system was built in [reference](tor-design.pdf) of:
+```
+Tor: The Second-Generation Onion Router
+Roger Dingledine - The Free Haven Project - arma@freehaven.net
+Nick Mathewson - The Free Haven Project - nickm@freehaven.net
+Paul Syverson - Naval Research Lab - syverson@itd.nrl.navy.mil
+```
 
 ## Application Layer
 ---
@@ -27,6 +33,13 @@ Client is allowed to receive messages on the board and update new messages on th
  ![Application workflow](./images/application-workflow.png) 
 
 </p>
+
+#### Client Functionality
+---
+- Message is sent to the server, where it is added to the MackYack board.
+- Requests to the server are made periodically (every 3 seconds) to update the client's local view of the MackYack board.
+- Anonymity is maintained by sending requests through an Onion Routing overlay network
+    - Onion Routing overlay network is accessed via. an Onion Proxy. More details in "Onion Routing Protocol" section.
 
 There exists three commands in our Client-side application.
  - `GET` - Constructs and sends a GetRequest
