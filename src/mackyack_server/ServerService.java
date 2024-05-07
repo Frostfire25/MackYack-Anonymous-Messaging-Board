@@ -40,6 +40,9 @@ public class ServerService {
             BufferedWriter output = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
 
             String msg = input.readLine();
+
+            
+
             System.out.println("Message received: " + msg);
 
             output.write(msg);
