@@ -38,11 +38,8 @@ import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.Security;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.encoders.Base64Encoder;
 
 /**
  * Class for the threaded service implementation of the OR (to allow for
@@ -204,18 +201,25 @@ public class OnionRouterService implements Runnable {
                         port = dataCell.getServerPort();
 
                         sendToServer(dataCell.getChild().toJSON(), addr, port, circID);
+                        return;
                     } catch (InvalidObjectException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                 }
+                    
             }
+
+            // ADDED BY ALEX?
+            // SHOULD NOT THIS BE AN ELSE? we only send the child to the destination if it is a relay (& not create or data?) no?
 
             // b. Actually send to the socket.
             sendToDestination(child.toJSON(), addr, port);
             System.out.println("Sent decrypted message to [" + addr + ":" + port + "].");
             System.out.println("Message sent: ");
             System.out.println(child.getFormattedJSON());
+                //}
+
         }
         // b. If it's returning TO Alice (i.e. the circID is in the outTable).
         else if (OnionRouter.getOutTable().containsKey(circID)) {
@@ -400,6 +404,7 @@ public class OnionRouterService implements Runnable {
         Key key = OnionRouter.getKeyTable().get(circID);
 
         // 2. Encrypt the RelayCell and package it into a RelaySecret (will be wrapped in another RelayCell).
+        // Empty secret is Alright since we are not returning anything
         RelaySecret secret = new RelaySecret("", 0, obj);
         String ctextSecret = null;
         try {
@@ -548,7 +553,7 @@ public class OnionRouterService implements Runnable {
             BufferedWriter output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             output.write(msg);
             output.newLine();
-            output.close();
+            output.flush();
 
             System.out.println("Sent to server.");
 

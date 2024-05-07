@@ -15,6 +15,10 @@ public class GetRequest implements JSONSerializable {
 
     // Should the methods just be left unimplemented? -Brandon
 
+    public GetRequest() {
+
+    }
+
     /**
      * Construct a GetRequest cell from the corresponding JSON object.
      * 
@@ -36,7 +40,7 @@ public class GetRequest implements JSONSerializable {
         if (obj instanceof JSONObject) {
             message = (JSONObject) obj;
 
-            if (message.size() > 0)
+            if (message.size() > 1)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -59,6 +63,8 @@ public class GetRequest implements JSONSerializable {
     @Override
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
+
+        obj.put("messagetype", "getrequest");
 
         return obj;
     }

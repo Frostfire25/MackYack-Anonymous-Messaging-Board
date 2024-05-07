@@ -10,7 +10,13 @@ import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import mackyack_messages.GetResponse;
 import mackyack_messages.Message;
+import mackyack_messages.PutRequest;
+import mackyack_messages.PutResponse;
+import merrimackutil.json.JSONSerializable;
+import merrimackutil.json.JsonIO;
+import merrimackutil.json.types.JSONObject;
 
 public class ServerService {
     
@@ -41,15 +47,35 @@ public class ServerService {
 
             String msg = input.readLine();
 
-            
+            // Read msg as a JSONObject
+            JSONObject obj = JsonIO.readObject(msg);
 
-            System.out.println("Message received: " + msg);
+            JSONSerializable ret = null;
+            switch(obj.getString("messagetype")) {
+                case "getrequest": {
+                    ret = new GetResponse(MackYackServer.getMessages().getMessages());
+                }; break;
+                case "putrequest": {
+                    // Deserialize the message
+                    PutRequest req = new PutRequest(obj);
+                    // Create a new message and append to Messages array. 
+                    Message putMessage = createMessage(req.getData());
+                    MackYackServer.getMessages().addMessage(putMessage);
+                    // Send a PutResponse
+                    ret = new PutResponse();
+                }; break;
+            }
 
-            output.write(msg);
+            // If the message received was not supported, report and move along.
+            if(ret == null) {
+                System.out.println("Invalid message received: ");
+                System.out.println(msg);
+                continue;
+            }
+
+            output.write(ret.serialize());
             output.newLine();
             output.close();
-
-            sock.close();
         }
     }
 
