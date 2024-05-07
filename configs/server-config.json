@@ -1,5 +1,6 @@
 {
    "privKey" : "MIHbAgEAMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykBEMCQQCs2yekRW+pvJ/Np7WkG1OlxwX3kSk0YMUk5Br9Ht/xI/G9b57+iH1SMsAr9x98TdWDN3fUfnuP5P94oZOM63EY",
-   "port" : 5010
+   "port" : 5010,
+   "messagesPath": "./configs/messages.json"
 }
 

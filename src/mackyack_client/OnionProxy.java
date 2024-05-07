@@ -98,6 +98,15 @@ public class OnionProxy {
         //for(JSONSerializable n : create_and_relay_messages) {
         //    System.out.println(n.toJSONType().getFormattedJSON());
         //}
+
+        for(Router n : circuit) {
+            System.out.println(n.getB64_IV() != null && n.getSymmetricKey() != null);
+        }
+
+        // Poll blocking until the program is closed
+        while(true) {
+            poll();
+        }
     }
 
     /**
