@@ -120,7 +120,9 @@ public class OnionRouterService implements Runnable {
                     case "DATA":
                         DataCell dataCell = new DataCell(obj);
 
-                        // 1. Find out the destination
+                        // 1. Send it to the server. No CircID needed (THIS IS TEST CODE)
+                        System.out.println("Sending to server!");
+                        sendToServer(dataCell.getChild().toJSON(), dataCell.getServerAddr(), dataCell.getServerPort(), "");
 
                         break;
                     default:
@@ -548,8 +550,12 @@ public class OnionRouterService implements Runnable {
             output.newLine();
             output.close();
 
+            System.out.println("Sent to server.");
+
             // Wait for the response
             String res = input.readLine();
+
+            System.out.println("Response received: " + res);
 
             // Package it in a RelayCell and send it off!
             RelayCell cell = packageInRelayCell(JsonIO.readObject(res), circID);
