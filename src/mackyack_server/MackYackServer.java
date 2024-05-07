@@ -1,16 +1,10 @@
 package mackyack_server;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.InvalidObjectException;
-import java.io.OutputStreamWriter;
 import java.security.NoSuchAlgorithmException;
-import java.net.ServerSocket;
-import java.net.Socket;
-
 import merrimackutil.cli.LongOption;
 import merrimackutil.cli.OptionParser;
 import merrimackutil.json.JsonIO;
@@ -25,7 +19,10 @@ public class MackYackServer
 {
     public static boolean doHelp = false;               // True if help option present.
     private static ServerConfig conf = null;            // The configuration information.
+    private static Messages messages;                   // Data for reading / writing messages
     private static String configFile = "./configs/server-config.json";   // Default configuration file.
+
+    private static ServerService serverService;         // Service for managing the servers receiving information
     
     /**
      * Prints the usage to the screen and exits.
@@ -107,6 +104,7 @@ public class MackYackServer
         try
         { 
             conf = new ServerConfig(configFile);
+            messages = new Messages(conf.getMessagesPath());
         }
         catch(InvalidObjectException ex)
         {
@@ -176,25 +174,22 @@ public class MackYackServer
             System.exit(0);
         }
 
-        // TODO: Server implementation
-        System.out.println("Mack Yack Server built successfully.");
+        System.out.println("Mack Yack Server built successfully on port: " + conf.getPort() + ".");
 
-        ServerSocket server = new ServerSocket(conf.getPort());
-
-        while(true) {
-            Socket sock = server.accept();
-            System.out.println("Connection established");
-            BufferedReader input = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-            BufferedWriter output = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
-
-            String msg = input.readLine();
-            System.out.println("Message received: " + msg);
-
-            output.write(msg);
-            output.newLine();
-            output.close();
-
-            sock.close();
-        }
+        serverService = new ServerService();
     }
+
+    public static ServerConfig getConf() {
+        return conf;
+    }
+
+    public static Messages getMessages() {
+        return messages;
+    }
+
+    public static ServerService getServerService() {
+        return serverService;
+    }
+
+    
 }

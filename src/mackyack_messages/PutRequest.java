@@ -11,16 +11,24 @@ import merrimackutil.json.types.JSONType;
  * Sent from Client through the circuit to the Server containing a message. This
  * message will be appended to the board.
  */
-public class Put implements JSONSerializable {
+public class PutRequest implements JSONSerializable {
 
     private String data;
+
+    /**
+     * Construct a Put Request to send data
+     * @param data
+     */
+    public PutRequest(String data) {
+        this.data = data;
+    }
 
     /**
      * Construct a Put cell from the corresponding JSON object.
      * 
      * @param obj a JSON object representing a Put cell.
      */
-    public Put(JSONObject obj) throws InvalidObjectException {
+    public PutRequest(JSONObject obj) throws InvalidObjectException {
         deserialize(obj);
     }
 
@@ -41,7 +49,7 @@ public class Put implements JSONSerializable {
             else
                 data = message.getString("data");
 
-            if (message.size() > 1)
+            if (message.size() > 2)
                 throw new InvalidObjectException("Superflous fields");
         }
     }
@@ -65,6 +73,7 @@ public class Put implements JSONSerializable {
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
 
+        obj.put("messagetype", "putrequest");
         obj.put("data", data);
 
         return obj;

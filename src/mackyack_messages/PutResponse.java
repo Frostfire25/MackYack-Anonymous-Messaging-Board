@@ -24,6 +24,10 @@ public class PutResponse implements JSONSerializable {
         deserialize(obj);
     }
 
+    public PutResponse() {
+        
+    }
+
     /**
      * Coverts json data to an object of this type.
      * 
@@ -59,6 +63,8 @@ public class PutResponse implements JSONSerializable {
     @Override
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
+
+        obj.put("messagetype", "putresponse");
 
         return obj;
     }

@@ -18,6 +18,7 @@ public class ServerConfig implements JSONSerializable {
 
     private String privKey;
     private int port;
+    private String messagesPath;
 
     public ServerConfig(String path) throws FileNotFoundException, InvalidObjectException {
         this.path = path;
@@ -61,6 +62,11 @@ public class ServerConfig implements JSONSerializable {
             throw new InvalidObjectException("Expected a Config object -- port expected.");
         }
 
+        if (obj.containsKey("messagesPath")) {
+            this.messagesPath = obj.getString("messagesPath");
+        } else {
+            throw new InvalidObjectException("Expected a Config object -- messagesPath expected.");
+        }
     }
 
     @Override
@@ -68,6 +74,7 @@ public class ServerConfig implements JSONSerializable {
         JSONObject obj = new JSONObject();
         obj.put("privKey", this.privKey);
         obj.put("port", this.port);
+        obj.put("messagesPath", messagesPath);
         return obj; // We are never reading this file to JSON.
     }
 
@@ -81,6 +88,10 @@ public class ServerConfig implements JSONSerializable {
 
     public int getPort() {
         return port;
+    }
+
+    public String getMessagesPath() {
+        return messagesPath;
     }
     
     /**

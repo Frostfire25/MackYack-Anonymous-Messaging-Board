@@ -18,6 +18,10 @@ public class GetResponse implements JSONSerializable {
 
     private List<Message> messages;
 
+    public GetResponse(List<Message> messages) {
+        this.messages = messages;
+    }
+
     /**
      * Construct a GetResponse cell from the corresponding JSON object.
      * 
@@ -75,6 +79,7 @@ public class GetResponse implements JSONSerializable {
         for (int i = 0; i < messages.size(); i++)
             array.add(messages.get(i).toJSONType());
 
+        obj.put("messagetype", "getresponse");
         obj.put("messages", array);
 
         return obj;

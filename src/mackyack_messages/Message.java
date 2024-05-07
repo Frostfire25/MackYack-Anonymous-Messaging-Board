@@ -16,14 +16,11 @@ public class Message implements JSONSerializable {
         this.timestamp = timestamp;
     }
 
-    public String getData() {
-        return data;
+    public Message(JSONObject obj) throws InvalidObjectException {
+        deserialize(obj);
     }
 
-    public String getTimestamp() {
-        return timestamp;
-    }
-
+    @Override
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
 
@@ -48,16 +45,28 @@ public class Message implements JSONSerializable {
                 throw new InvalidObjectException("Message needs a timestamp.");
             else
                 timestamp = message.getString("timestamp");
-
-
-            if (message.size() > 1)
-                throw new InvalidObjectException("Superflous fields");
-
         }
     }
 
     @Override
     public String serialize() {
         return toJSONType().toJSON();
+    }
+
+    @Override
+    public String toString() {
+        return "["+timestamp+"] - " + data;
+    }
+
+    /**
+     * Accessors
+     */
+
+     public String getData() {
+        return data;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
     }
 }

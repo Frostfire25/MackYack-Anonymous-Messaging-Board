@@ -124,6 +124,8 @@ public class OnionRouter
     {
         try
         { 
+            configFile = "./configs/router-3.json";
+
             if(configFile == null || configFile.isEmpty()) {
                 throw new FileNotFoundException("File config can not be empty for Onion Router. Please choose a specific router.");
             }

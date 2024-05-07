@@ -98,6 +98,13 @@ public class OnionProxy {
         //for(JSONSerializable n : create_and_relay_messages) {
         //    System.out.println(n.toJSONType().getFormattedJSON());
         //}
+
+        //for(Router n : circuit) {
+        //    System.out.println(n.getB64_IV() != null && n.getSymmetricKey() != null);
+        //}
+
+        // Poll proxy async
+        pollProxy(true);
     }
 
     /**
@@ -127,7 +134,9 @@ public class OnionProxy {
     private void pollProxy(boolean async) {
         if(async) {
             Thread thread = new Thread(() -> {
-                poll();
+                while(true) {
+                    poll();
+                }
             });
             thread.start();
         } else {
@@ -136,16 +145,12 @@ public class OnionProxy {
     }
 
     private void poll() {
-        while(true) {
             try {
                 ServerSocket server = new ServerSocket(conf.getPort());
-                System.out.println("Polling...");
                 Socket sock = server.accept();
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
-
-                System.out.println("Connection accepted ["+sock.getInetAddress().getHostAddress()+":"+sock.getPort()+"]" );
 
                 // Determine if the packet is handled at the Proxy Layer or at the ApplicationService Layer
                 JSONObject obj = JsonIO.readObject(reader.readLine());
@@ -157,7 +162,6 @@ public class OnionProxy {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
     }
 
     private void handJSONObject(JSONObject obj) {
@@ -175,7 +179,7 @@ public class OnionProxy {
                     }; return;
 
                     case "DATA": {
-                        // ??
+                        ApplicationService.handle(obj);
                     }; return;
                 }
                 // ?
@@ -198,22 +202,8 @@ public class OnionProxy {
 
     private void handleRelay(RelayCell relayCell) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidObjectException, InvalidKeySpecException {
         // If we receive a relay cell, it is wrapping either a CreatedCell or a DataCell.
-
-        // Step 1 Decrypt Relay Secret
-        // How are we going to do this?
-        // Trivial, Go to the last OR in the circuit. Attempt to decrypt, 
-        //      If decrypted (the plaintext is JSONSearlizable)
-        //      Then handle the associating JSONSearlizable Cell, (type)
-        //  else
-        //      Go to the OR prior to the last one, attempt to decrypt
-        //  This is not a great way of handling.
-
-        // We have the variable router_encrypted to determine the router in the circuit that 
-        
         // When receiving an Onion Router Message it wrapped starting with OR enter's keys
-
         // Decrypt and handle
-
         RelayCell message = relayCell;
         // Loop through all of the OR's 
         for(int i = 0; i < circuit.size(); i++) {
@@ -239,12 +229,13 @@ public class OnionProxy {
                     }; break;
 
                     case "DATA": {
-                        // ToDo Handle Data? I believe this is sent to the ApplicationService layer.
+                        ApplicationService.handle(obj);
                     }; return;
                 }
                 // ?
             } else {
                 ApplicationService.handle(obj);
+                return;
             }
         }
     }
@@ -334,42 +325,9 @@ public class OnionProxy {
     }
 
     /**
-     * Construct all of the relay messages from each cell
-     * Each CreateCell is associated with the respective Router from {@code circuit} 
-     * 
-     * @param createCells List<CreateCell> 
-     * @return List<JSONSerializable> - A list containing either RelayCells or CreateCells that will be used to send a message. Each node in the list will be sent to the entry node. 
-     
-    private List<JSONSerializable> createRelays(List<CreateCell> createCells) {
-        List<JSONSerializable> relayCells = new ArrayList<>();
-
-        // Start at index 1 since the entry node does not receive a relay cell
-        relayCells.add(createCells.get(0));
-        for(int i = 1; i < createCells.size(); i++) {
-
-            RelayCell relayCell = new RelayCell(circuit.get(i).getCircuitId(), circuit.get(i).getAddr(), circuit.get(i).getPort(), (JSONObject) createCells.get(i).toJSONType());
-
-            if( i > 1 ) {
-                // Loop through all of the Routers from 0 -> (i-2), and append them to the RelayCell
-                // This should only be ran if there are 2+ Relays to be made
-                for(int j = i - 1; j > 0; j--) {
-                    // Create a new RelayCell wrapping 
-                    RelayCell newRelayCell = new RelayCell(circuit.get(j).getCircuitId(), circuit.get(j).getAddr(), circuit.get(j).getPort(), (JSONObject) relayCell.toJSONType());
-                    relayCell = newRelayCell;
-                }
-            }
-            
-            // Append to the array
-            relayCells.add(relayCell);
-        }
-
-        return relayCells;
-    }
-     * @throws IOException 
-     * @throws UnknownHostException 
-     * @throws InterruptedException 
-    */
-
+     * Send each of the Create Cells out to the associating OR while polling for a response from an OR 
+     * @param createCells
+     */
     private void sendCreateCells(List<CreateCell> createCells) throws UnknownHostException, IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException, InterruptedException {
 
         // Loop through every element in the circuit
