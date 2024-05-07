@@ -16,6 +16,7 @@ public class ClientConfig implements JSONSerializable {
 
     private String path;
 
+    private String addr;
     private int port;
     private String serverAddr;
     private int serverPort;
@@ -52,6 +53,12 @@ public class ClientConfig implements JSONSerializable {
             throw new InvalidObjectException("Expected Config Type - JsonObject. ");
         }
 
+        if (obj.containsKey("addr")) {
+            this.addr = obj.getString("addr");
+        } else {
+            throw new InvalidObjectException("Expected a Config object -- addr expected.");
+        }
+
         if (obj.containsKey("port")) {
             this.port = obj.getInt("port");
         } else {
@@ -86,6 +93,7 @@ public class ClientConfig implements JSONSerializable {
     @Override
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
+        obj.put("addr", addr);
         obj.put("port", port);
         obj.put("serverAddr", this.serverAddr);
         obj.put("serverPort", this.serverPort);
@@ -97,6 +105,10 @@ public class ClientConfig implements JSONSerializable {
     /**
      * Accessors
      */
+
+    public String getAddr() {
+        return addr;
+    }
 
     public int getPort() {
         return port;

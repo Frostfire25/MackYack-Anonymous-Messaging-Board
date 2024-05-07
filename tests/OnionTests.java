@@ -130,7 +130,7 @@ public class OnionTests {
 
 
             // 2. Send a CreateCell 
-            CreateCell cell = new CreateCell(symmetricKey_CipherText.getSecond(), 5, B64_encrypted_sym_key);
+            CreateCell cell = new CreateCell(symmetricKey_CipherText.getSecond(), "5", B64_encrypted_sym_key);
             out.println(cell.serialize());
             System.out.println("Sent to OR.");
 

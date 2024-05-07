@@ -298,4 +298,18 @@ public class OnionRouter
     public static PrivateKey getPrivKey() {
         return privKey;
     }
+
+    /**
+     * @return port that this OR is bound to.
+     */
+    public static String getAddr() {
+        return conf.getAddr();
+    }
+
+    /**
+     * @return port that this OR is bound to.
+     */
+    public static int getPort() {
+        return conf.getPort();
+    }
 }

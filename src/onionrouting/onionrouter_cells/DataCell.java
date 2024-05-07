@@ -19,7 +19,6 @@ public class DataCell implements JSONSerializable {
 
     /**
      * Constructor
-     * @param circID
      * @param addr
      * @param port
      * @param child
@@ -52,22 +51,22 @@ public class DataCell implements JSONSerializable {
             message = (JSONObject) obj;
 
             if (!message.containsKey("type"))
-                throw new InvalidObjectException("Relay needs a type.");
+                throw new InvalidObjectException("Data needs a type.");
             else if(!message.getString("type").equals(type))
                 throw new InvalidObjectException("Type is incorrectly specified for Relay cell.");
 
             if (!message.containsKey("serverPort"))
-                throw new InvalidObjectException("Relay needs an serverPort.");
+                throw new InvalidObjectException("Data needs an serverPort.");
             else
                 serverPort = message.getInt("serverPort");
 
             if (!message.containsKey("serverAddr"))
-                throw new InvalidObjectException("Relay needs a serverAddr.");
+                throw new InvalidObjectException("Data needs a serverAddr.");
             else 
                 serverAddr = message.getString("serverAddr");
 
             if (!message.containsKey("child"))
-                throw new InvalidObjectException("Relay needs an circID.");
+                throw new InvalidObjectException("Data needs a child.");
             else
                 child = message.getObject("child");
 
@@ -97,7 +96,7 @@ public class DataCell implements JSONSerializable {
         JSONObject obj = new JSONObject();
 
         obj.put("type", type);
-        obj.put("relaySecret", child);
+        obj.put("child", child);
         obj.put("serverAddr", serverAddr);
         obj.put("serverPort", serverPort);
 
@@ -107,6 +106,14 @@ public class DataCell implements JSONSerializable {
 
     public JSONObject getChild() {
         return child;
+    }
+
+    public String getServerAddr() {
+        return serverAddr;
+    }
+
+    public int getServerPort() {
+        return serverPort;
     }
 
 }

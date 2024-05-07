@@ -59,8 +59,6 @@ public class OnionProxy {
     private KeyPairGenerator generator;
     private KeyAgreement ecdhKex;
 
-    //private Socket sock = null;     // Socket with the entrance node, will be null if it isn't being used
-
     public Router getEntryRouter() {
         return circuit.get(0);
     }
@@ -122,6 +120,8 @@ public class OnionProxy {
         writer.write(message);
         writer.newLine();
         writer.flush();
+
+        sock.close();
     }
 
     private void pollProxy(boolean async) {
@@ -138,9 +138,9 @@ public class OnionProxy {
     private void poll() {
         while(true) {
             try {
+                ServerSocket server = new ServerSocket(conf.getPort());
                 System.out.println("Polling...");
-                ServerSocket servSocket = new ServerSocket(conf.getPort());
-                Socket sock = servSocket.accept();
+                Socket sock = server.accept();
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
@@ -152,7 +152,7 @@ public class OnionProxy {
                 handJSONObject(obj);
                 // Protocol is to close the socket after a message has been handled.
                 sock.close();
-                sock = null;
+                server.close();
                 return;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -224,8 +224,8 @@ public class OnionProxy {
             String child = OnionProxyUtil.decryptSymmetric(message.getRelaySecret(), router.getSymmetricKey(), Base64.getDecoder().decode(router.getB64_IV()));
 
             // Turn into a JSONObject
-            JSONObject obj = JsonIO.readObject(child);
-            
+            JSONObject obj = JsonIO.readObject(child).getObject("child");
+
             if(obj.containsKey("type")) {
                 // TODO
                 // If this is a CreatedCell, then handle.
@@ -258,7 +258,7 @@ public class OnionProxy {
      */
     private void handleCreated(CreatedCell createdCell) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException {
         // First, find the associating router with the createdCell ID
-        Router router = findRouterWithCircId(createdCell.getCircId());
+        Router router = findRouterWithCircId(createdCell.getCircID());
         
         // 1. Generate the first half of the DH KEX.
         PublicKey gYPubKey = OnionProxyUtil.getPublicKey("EC", createdCell.getgY());
@@ -447,7 +447,7 @@ public class OnionProxy {
             n.setCircuitId(circID);
 
             // 2. Send a CreateCell 
-            CreateCell cell = new CreateCell(symmetricKey_CipherText.getSecond(), circID, B64_encrypted_sym_key);
+            CreateCell cell = new CreateCell(symmetricKey_CipherText.getSecond(), circID, B64_encrypted_sym_key, conf.getAddr(), conf.getPort());
             ret.add(cell);
         }
 

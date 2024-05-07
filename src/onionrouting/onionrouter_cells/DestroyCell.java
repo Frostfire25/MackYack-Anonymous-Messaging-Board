@@ -11,10 +11,9 @@ import merrimackutil.json.types.JSONType;
  * Sent from Client to the first onion router to break down the established
  * circuit (recursively).
  */
-public class DestroyCell implements JSONSerializable {
+public class DestroyCell extends Cell {
 
     private final String type = "DESTROY";
-    private String circID;
 
     /**
      * Construct a Destroy cell from the corresponding JSON object.
@@ -79,9 +78,5 @@ public class DestroyCell implements JSONSerializable {
 
     public String getType() {
         return type;
-    }
-
-    public String getCircID() {
-        return circID;
     }
 }

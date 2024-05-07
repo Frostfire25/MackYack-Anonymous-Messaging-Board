@@ -1,4 +1,5 @@
 {
+    "addr": "127.0.0.1",
     "port": 5000,
     "serverAddr": "127.0.0.1",
     "serverPort": 5010,
