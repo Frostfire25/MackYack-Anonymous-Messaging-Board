@@ -16,9 +16,9 @@ public class ServerConfig implements JSONSerializable {
 
     private String path;
 
-    private String dnsAddress;
-    private int sinkholePort;
-    private String blockFile;
+    private String privKey;
+    private int port;
+    private String messagesPath;
 
     public ServerConfig(String path) throws FileNotFoundException, InvalidObjectException {
         this.path = path;
@@ -50,46 +50,55 @@ public class ServerConfig implements JSONSerializable {
             throw new InvalidObjectException("Expected Config Type - JsonObject. ");
         }
 
-        if (obj.containsKey("dns-address")) {
-            this.dnsAddress = obj.getString("dns-address");
+        if (obj.containsKey("privKey")) {
+            this.privKey = obj.getString("privKey");
         } else {
-            throw new InvalidObjectException("Expected a Config object -- dns-address expected.");
+            throw new InvalidObjectException("Expected a Config object -- privKey expected.");
         }
 
-        if (obj.containsKey("sinkhole-port")) {
-            this.sinkholePort = obj.getInt("sinkhole-port");
+        if (obj.containsKey("port")) {
+            this.port = obj.getInt("port");
         } else {
-            throw new InvalidObjectException("Expected a Config object -- sinkhole-port expected.");
-        }
-        
-        if (obj.containsKey("block-file")) {
-            this.blockFile = obj.getString("block-file");
-        } else {
-            throw new InvalidObjectException("Expected a Config object -- block-file expected.");
+            throw new InvalidObjectException("Expected a Config object -- port expected.");
         }
 
+        if (obj.containsKey("messagesPath")) {
+            this.messagesPath = obj.getString("messagesPath");
+        } else {
+            throw new InvalidObjectException("Expected a Config object -- messagesPath expected.");
+        }
     }
 
     @Override
     public JSONType toJSONType() {
         JSONObject obj = new JSONObject();
-        obj.put("dns-address", this.dnsAddress);
-        obj.put("sinkhole-port", this.sinkholePort);
-        obj.put("block-file", this.blockFile);
+        obj.put("privKey", this.privKey);
+        obj.put("port", this.port);
+        obj.put("messagesPath", messagesPath);
         return obj; // We are never reading this file to JSON.
     }
 
-    public String getDnsAddress() {
-        return dnsAddress;
+    /**
+     * Accessors
+     */
+
+    public String getPrivKey() {
+        return privKey;
     }
 
-    public int getSinkholePort() {
-        return sinkholePort;
+    public int getPort() {
+        return port;
     }
 
-    public String getBlockFile() {
-        return blockFile;
+    public String getMessagesPath() {
+        return messagesPath;
     }
-
     
+    /**
+     * Modifiers
+     */
+
+     public void setPrivKey(String key) {
+        this.privKey = key;
+     }
 }

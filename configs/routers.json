@@ -1,0 +1,24 @@
+{
+    "routers": [
+        {
+            "addr": "127.0.0.1",
+            "port": 5002,
+            "pubKey": "MIHZMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykA0QAAkEA6kte8f+YXQaUBfLdfB1eUfigD/DcEVtYDTCfntAAF4RdORWNhhKewzcqcN0aL/oy99aEQGB1LN80pno73B3nUQ=="
+        },
+        {
+            "addr": "127.0.0.1",
+            "port": 5003,
+            "pubKey": "MIHZMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykA0QAAkEArNQmZYPdi+vpkLgfPyLfUAEAub5UNqcDxMDHfXqpaU2UdLRr4s6xY90DwxH2A/XkHfkHOnaBAn9blY+k6CkWfg=="
+        },
+        {
+            "addr": "127.0.0.1",
+            "port": 5004,
+            "pubKey": "MIHZMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykA0QAAkEAx8md8rbYei6REG813jVn75xd6TkHP5q1vkUgPKZOxZhvNz1wILF1aTDHpaOn9FwIy6nBqpksanHCaKc6DMdJjA=="
+        },
+        {
+            "addr": "127.0.0.1",
+            "port": 5005,
+            "pubKey": "MIHZMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykA0QAAkEAw04CDsZAqZ89OF8UvgPiXuT39nz9mMshO6fUiNc98V9KIjON22u/ztyQFkkZx/s7yh4DKa828eUb2gtOAo/fqQ=="
+        }
+    ]
+}

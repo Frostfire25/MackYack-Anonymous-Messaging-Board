@@ -1,10 +1,14 @@
 package mackyack_server;
+
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-
+import java.security.NoSuchAlgorithmException;
 import merrimackutil.cli.LongOption;
 import merrimackutil.cli.OptionParser;
+import merrimackutil.json.JsonIO;
+import merrimackutil.util.Pair;
 import merrimackutil.util.Tuple;
 
 
@@ -15,16 +19,18 @@ public class MackYackServer
 {
     public static boolean doHelp = false;               // True if help option present.
     private static ServerConfig conf = null;            // The configuration information.
-    private static String configFile = "config.json";   // Default configuration file.
-    
+    private static Messages messages;                   // Data for reading / writing messages
+    private static String configFile = "./configs/server-config.json";   // Default configuration file.
 
+    private static ServerService serverService;         // Service for managing the servers receiving information
+    
     /**
      * Prints the usage to the screen and exits.
      */
     public static void usage() {
         System.out.println("usage:");
-        System.out.println("  dhtnode --config <config>");
-        System.out.println("  dhtnode --help");
+        System.out.println("  mackyack_server --config <config>");
+        System.out.println("  mackyack_server --help");
         System.out.println("options:");
         System.out.println("  -c, --config\t\tConfig file to use.");
         System.out.println("  -h, --help\t\tDisplay the help.");
@@ -98,6 +104,7 @@ public class MackYackServer
         try
         { 
             conf = new ServerConfig(configFile);
+            messages = new Messages(conf.getMessagesPath());
         }
         catch(InvalidObjectException ex)
         {
@@ -112,13 +119,34 @@ public class MackYackServer
         }
     }
 
+        /**
+     * Saves the configuration file.
+     */
+    public static void saveConfig() {
+        try
+        { 
+            if(configFile == null || configFile.isEmpty()) {
+                throw new FileNotFoundException("File config can not be empty for Onion Router. Please choose a specific router.");
+            }
+
+            JsonIO.writeSerializedObject(conf, new File(configFile));
+        }
+        catch(FileNotFoundException ex)
+        {
+            System.out.println(ex);
+            System.exit(1);
+        }
+    }
+
+
     /**
      * The entry point
      * @param args the command line arguments.
      * @throws IOException 
      * @throws InterruptedException 
+     * @throws NoSuchAlgorithmException 
      */
-    public static void main(String[] args) throws InterruptedException, IOException
+    public static void main(String[] args) throws InterruptedException, IOException, NoSuchAlgorithmException
     {
     
         if (args.length > 2)
@@ -126,10 +154,42 @@ public class MackYackServer
 
         processArgs(args); 
 
-        // TODO: Server implementation
-        System.out.println("Mack Yack Server built successfully.");
+        // Assure that this router has a pub/private key pair, 
+        // if not 
+        //  update the config, 
+        //  stop program, 
+        //  and print out public key.
+        if(conf.getPrivKey() == null || conf.getPrivKey().isEmpty()) {
 
-        // We don't care about our threads, just crudely shutdown.
-        System.exit(0);
+            Pair<String> keys = ServerCrypto.generateAsymKeys();
+
+            conf.setPrivKey(keys.getSecond());
+        
+            saveConfig();
+
+            System.out.println("Please update the corresponding client-config.json table with the public key below.");
+            System.out.println(keys.getFirst());
+
+            // We don't care about our threads, just crudely shutdown.
+            System.exit(0);
+        }
+
+        System.out.println("Mack Yack Server built successfully on port: " + conf.getPort() + ".");
+
+        serverService = new ServerService();
     }
+
+    public static ServerConfig getConf() {
+        return conf;
+    }
+
+    public static Messages getMessages() {
+        return messages;
+    }
+
+    public static ServerService getServerService() {
+        return serverService;
+    }
+
+    
 }
