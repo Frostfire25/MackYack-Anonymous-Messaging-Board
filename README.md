@@ -82,48 +82,28 @@ Properties:
 ## OnionProxy
 ---
 The `OnionProxy` (OP) class serves as a Proxy within an Onion Routing Network, facilitating communication between a client and an Entrance Onion Router. It manages the establishment of secure communication channels between nodes, message relay, and message reception. The Onion Proxy is abstracted out from the client such that it can be ran as a unique layer between any Application layer that utilizes MerrimackUtil JSON Messaging and connects to our devised Onion Network.
-- Used by MackYack clients to access the Onion Routing overlay network.
-    - The Onion Proxy (OP) is run on the client's local computer when the MackYack application starts.
-- Constructs the circuit (i.e. sends create + extend cells) by choosing from the Client's list of known routers (located in routers.json).
-- Ability to deconstruct the circuit by sending a destroy cell and its associated circID to the entry Onion Router (OR).
-- Encrypts MackYack messages in "layers" (like an onion! Get it?).
-    - Encryption is done by encrypting the message with the key established with each OR in the circuit starting with the farthest node and ending with the closest.
-- Decrypts MackYack responses by peeling back "layers".
-    - Decryption is done by decrypting the message with the key establish with each OR in the circuit starting with the closest node and ending with the farthest.
+The Onion Proxy (OP) is utilized by MackYack clients for accessing the Onion Routing overlay network, running on the client's local computer upon the MackYack application's launch.
+ - It constructs the circuit, selecting from the client's list of known routers (located in routers.json), and has the ability to deconstruct the circuit by sending a destroy cell and its associated circID to the entry Onion Router (OR).
+ - The OP encrypts MackYack messages in "layers," akin to an onion, encrypting the message with the key established with each OR in the circuit from the farthest node to the closest.
+ - Subsequently, it decrypts MackYack responses by peeling back "layers," decrypting the message with the key established with each OR in the circuit from the closest node to the farthest.
+ - Additionally, the OP handles various tasks such as:
+   - Determining whether a received JSON object should be processed at the Proxy Layer or the ApplicationService Layer.
+   - Finding the router associated with a specified circuit ID.
+   - Managing relay cells received from an Onion Router.
+   - Constructing messages to be sent.
+   - Sending create cells to each router in the circuit.
+   - Generating create cells for each router.
+   - Building the circuit from the provided router configuration.
 
-#### Methods
+#### Public API
 ### `public OnionProxy(RoutersConfig routersConfig, ClientConfig conf) throws Exception`
 This constructor initializes the Onion Routing System. It requires configurations for routers and clients. Upon instantiation, it constructs the circuit, generates create cells for each OR, sends create cells to initiate circuit keys, and starts polling for new messages on the proxy.
 
 ### `public void send(String message) `
 This method sends a string message to the entrance Onion Router. It establishes a socket connection and transmits the message.
 
-### `private void pollProxy()`
+### `public void pollProxy()`
 Initiates the polling mechanism for new messages on the proxy.
-
-### `private void handJSONObject(JSONObject obj)`
-Handles a received JSON object, determining whether it should be handled at the Proxy Layer or at the ApplicationService Layer.
-
-### `private Router findRouterWithCircId(int id)`
-Finds the router associated with the specified circuit ID.
-
-### `private void handleRelay(RelayCell relayCell) `
-Handles a relay cell received from an Onion Router. Decrypts the relay secret and handles the associated JSON serializable cell.
-
-### `private void handleCreated(CreatedCell createdCell) `
-Handles a created cell received from an Onion Router. Generates the first half of the DH Key Exchange and updates router information with the symmetric key.
-
-### `public JSONSerializable constructOperation(JSONSerializable message, String server_addr, int port) `
-Constructs a message to be sent, wrapping it in relays from the last router in the circuit to the entry node.
-
-### `private void sendCreateCells(List<CreateCell> createCells) `
-Sends create cells to each router in the circuit, encrypting and wrapping them in relays as necessary.
-
-### `private List<CreateCell> constructCreateCells() `
-Constructs create cells for each router in the circuit, generating the first half of the DH Key Exchange and encrypting symmetric keys.
-
-### `private void constructCircuit() `
-Constructs the circuit from the provided router configuration, selecting a specified number of routers as Onion Routers.
 
 
 ## Onion Routing Protocol
