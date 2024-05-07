@@ -53,6 +53,7 @@ public class ApplicationService {
 
             case "putresponse": {
                 System.out.println("Message added to board.");
+                System.out.println(COMMAND_MSG);
             }; return;
         }
     }

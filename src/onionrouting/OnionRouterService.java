@@ -65,16 +65,12 @@ public class OnionRouterService implements Runnable {
     @Override
     public void run() {
         try {
-
-            System.out.println("thread started");
-
             BufferedReader reader = new BufferedReader(new InputStreamReader(inSock.getInputStream()));
 
             // Run while the connection is alive in this circuit:
 
             // Read the type of the incoming cell
             String msg = reader.readLine();
-            System.out.println("Incoming message: " + msg);
             JSONObject obj = JsonIO.readObject(msg);
             if (!obj.containsKey("type")) {
                 System.err.println("Could not determine the type of the cell. Cell will be dropped");
@@ -84,8 +80,6 @@ public class OnionRouterService implements Runnable {
             inSock.close();
 
             String type = obj.getString("type");
-
-            System.out.println("type:" + obj.getString("type"));
 
             try {
                 switch (type) {
@@ -118,7 +112,6 @@ public class OnionRouterService implements Runnable {
                         DataCell dataCell = new DataCell(obj);
 
                         // 1. Send it to the server. No CircID needed (THIS IS TEST CODE)
-                        System.out.println("Sending to server!");
                         sendToServer(dataCell.getChild().toJSON(), dataCell.getServerAddr(), dataCell.getServerPort(), "");
 
                         break;
@@ -148,7 +141,6 @@ public class OnionRouterService implements Runnable {
     private void doRelay(RelayCell cell) {
         // 1. Check if it's incoming or outgoing. This is done by checking if it's in the inTable or outTable
         String circID = cell.getCircID();
-        System.out.println("Entered doRelay()");
         
         // a. If it's incoming from Alice (i.e. the circID is in the inTable).
         if (OnionRouter.getInTable().containsKey(circID)) {
@@ -171,8 +163,6 @@ public class OnionRouterService implements Runnable {
                 System.err.println(e);
             }
 
-            System.out.println("Decrypted secret.");
-
             // 3. Send the child to its destination
             String addr = secret.getAddr();
             int port = secret.getPort();
@@ -192,7 +182,6 @@ public class OnionRouterService implements Runnable {
                     child.put("srcAddr", OnionRouter.getAddr());
                     child.put("srcPort", OnionRouter.getPort());
 
-                    System.out.println("Create cell identified from this Relay cell: Added necessary info to outTable/askTable.");
                 }
                 else if(child.getString("type").equals("DATA")) {
                     try {
@@ -210,16 +199,8 @@ public class OnionRouterService implements Runnable {
                     
             }
 
-            // ADDED BY ALEX?
-            // SHOULD NOT THIS BE AN ELSE? we only send the child to the destination if it is a relay (& not create or data?) no?
-
             // b. Actually send to the socket.
             sendToDestination(child.toJSON(), addr, port);
-            System.out.println("Sent decrypted message to [" + addr + ":" + port + "].");
-            System.out.println("Message sent: ");
-            System.out.println(child.getFormattedJSON());
-                //}
-
         }
         // b. If it's returning TO Alice (i.e. the circID is in the outTable).
         else if (OnionRouter.getOutTable().containsKey(circID)) {
@@ -235,8 +216,8 @@ public class OnionRouterService implements Runnable {
             // 3. Send it off!
             sendToDestination(retCell.serialize(), addr, port);
         }
+
         // c. Else, drop it
-        System.out.println("Exited doRelay()");
     }
 
     /**
@@ -256,8 +237,6 @@ public class OnionRouterService implements Runnable {
     private void doCreate(CreateCell cell) throws NoSuchAlgorithmException,
             InvalidKeyException, InvalidKeySpecException, IOException {
         
-        System.out.println("do create start");
-
         // 1. Get gX from the cell. Then convert it to a Public Key for DH magic.
         // Decrypt gX so it can be used.
         byte[] gX = decryptHybrid(cell.getEncryptedSymKey(), cell.getgX());
@@ -300,15 +279,10 @@ public class OnionRouterService implements Runnable {
         // 4. Store circID + key K in table. Also store incoming connection + circID in inTable
         OnionRouter.getKeyTable().put(cell.getCircID(), new SecretKeySpec(sharedSecret, "AES"));
         OnionRouter.getInTable().put(cell.getCircID(), cell.getSrcAddr() + ":" + cell.getSrcPort());
-        System.out.println("Added [" + cell.getSrcAddr() + ":" + cell.getSrcPort() + "] to inTable.");
-
-        System.out.println("sending Created message");
 
         // Package in CreatedCell and return it back.
         CreatedCell retCell = new CreatedCell(gY, kHash, cell.getCircID());
         sendToDestination(retCell.serialize(), cell.getSrcAddr(), cell.getSrcPort());
-        
-        System.out.println("Created message sent");
     }
 
     /**
@@ -557,12 +531,8 @@ public class OnionRouterService implements Runnable {
             output.newLine();
             output.flush();
 
-            System.out.println("Sent to server.");
-
             // Wait for the response
             String res = input.readLine();
-
-            System.out.println("Response received: " + res);
 
             // Package it in a RelayCell and send it off!
             RelayCell cell = packageInRelayCell(JsonIO.readObject(res), circID);

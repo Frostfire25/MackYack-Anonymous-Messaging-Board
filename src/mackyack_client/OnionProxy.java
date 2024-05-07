@@ -78,30 +78,14 @@ public class OnionProxy {
         this.generator = KeyPairGenerator.getInstance("EC"); // Generator for elliptic curves (this is our group)    
         this.generator.initialize(256);
 
-        // Poll for new messages on the proxy
-        //pollProxy(true);
-
         // build the circuit
         constructCircuit();
 
         // Construct create cells for each OR
         List<CreateCell> createCells = constructCreateCells();
 
-        // Debug Message
-        System.out.println(Arrays.toString(circuit.toArray()));
-
-
         // Construct a list of messages (Relays) to initiate the circuit keys
         sendCreateCells(createCells);
-
-
-        //for(JSONSerializable n : create_and_relay_messages) {
-        //    System.out.println(n.toJSONType().getFormattedJSON());
-        //}
-
-        //for(Router n : circuit) {
-        //    System.out.println(n.getB64_IV() != null && n.getSymmetricKey() != null);
-        //}
 
         // Poll proxy async
         pollProxy(true);
@@ -335,8 +319,6 @@ public class OnionProxy {
 
             // Get the create cell destined for this router (NOT ENCRYPTED)
             JSONSerializable message = createCells.get(i);
-            System.out.println("Create message:");
-            System.out.println(message.toJSONType().getFormattedJSON());
             Router lastRouter = circuit.get(i);
 
             // If there needs to be a relay
@@ -363,7 +345,6 @@ public class OnionProxy {
                 }
             }
 
-            System.out.println(message.toJSONType().getFormattedJSON());
             send(message.serialize());
             pollProxy(false);
         }
