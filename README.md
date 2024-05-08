@@ -9,7 +9,6 @@
 
 ## MackYack Protocol
 
-
 ### Client Functionality
 ---
 - Message is sent to the server, where it is added to the MackYack board.
@@ -265,3 +264,32 @@ Example:
     privKey: "<private-key>"
 }
 ```
+
+## Build
+---
+To build the project first make sure you have the correct libraries to build the jar. They can be found in the [lib](/lib/) folder.
+
+First, run the `ant clean` command to remove old builds.
+Then, run `ant` to build the `mackyack_client`, `mackyack_server`, and `onionrouter`.
+| :zap:        Please make sure  bcprov-ext-jdk18on-172 is in the same directory as the build files when running!   |
+|-----------------------------------------|
+
+
+## Initiation
+--- 
+All commands should be ran in the root directory of the project
+
+1. Build & Run the `Onion Routers`
+   - First need to run k amount of Onion Routers (OR), where each value of k represents a unique Onion Router.
+   - Run the following command for a specific Onion Router k. Replace $ with k.
+   - `java -jar .\dist\onionrouter.jar --config .\configs\router-$.json`
+   - You will receive a public key, on the initiation run. Update the `routers.json` public configuration accordingly.
+   - To run the Onion Router, simply run the `java -jar` command again.
+
+2. Build & Run the `Application Server`
+   - Run the following command to run the MackYack application server.
+   - `java -jar .\dist\mackyack_server.jar --config .\configs\server-config.json`
+   - On initiation you will receive a public key, update the `client-config.json` file accordingly.
+  
+3. Build & Run the `Application Client and Onion Proxy`
+    - 
