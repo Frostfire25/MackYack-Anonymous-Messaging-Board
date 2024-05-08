@@ -125,6 +125,9 @@ public class OnionProxy {
         String entryRouterCircId = getEntryRouter().getCircuitId();
         DestroyCell destroyCell = new DestroyCell(entryRouterCircId);
         send(destroyCell.serialize());
+
+        // Empty the circuit
+        this.circuit.clear();
     }
 
     /**

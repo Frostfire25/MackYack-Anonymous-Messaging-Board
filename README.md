@@ -9,17 +9,16 @@
 
 ## MackYack Protocol
 
-### Client Functionality
----
-- Message is sent to the server, where it is added to the MackYack board.
-- Requests to the server are made periodically (every 3 seconds) to update the client's local view of the MackYack board.
-- Anonymity is maintained by sending requests through an Onion Routing overlay network
-    - Onion Routing overlay network is accessed via. an Onion Proxy. More details in "Onion Routing Protocol" section.
-
 ## Application Layer
 ---
 MackYack is designed to be an anonymous messaging board system. We have created a Client Server model for handling operations on the board.
 Client is allowed to receive messages on the board and update new messages on the board. While, the server is allowed to respond with the current state of the board and update the board when a new message is received.
+
+### Client Functionality
+- Message is sent to the server, where it is added to the MackYack board.
+- Requests to the server are made periodically (every 3 seconds) to update the client's local view of the MackYack board.
+- Anonymity is maintained by sending requests through an Onion Routing overlay network
+    - Onion Routing overlay network is accessed via. an Onion Proxy. More details in "Onion Routing Protocol" section.
 
 <p style="align: center;">
 
@@ -113,19 +112,72 @@ This method sends a string message to the entrance Onion Router. It establishes 
 ### `public void pollProxy()`
 Initiates the polling mechanism for new messages on the proxy.
 
+### `public void destroy()`
+Removes the circuit from the proxy and sends a DestroyCell to remove any reference of the circuit in the Onion Routing network.
+
+### `public Router getEntryRouter()`
+Reference to the first router of the circuit.
+
+### `public List<Router> getCircuit()`
+Returns the list of Router nodes that exist in the circuit.
 
 ## Onion Routing Protocol
 ---
-
-`TODO:`
 
 ### Onion Routing Service
  
 The OnionRouterService class serves as a handler for messages directed to an onion router, onion proxy, or web server; managing various tables and cryptographic operations. It operates within a threaded service model, handling incoming messages via the run() method. Upon receiving different types of cells, such as Relay, Create, Created, and Destroy, it executes corresponding actions like relaying messages, creating connections, updating & computing creation keys, or managing destructions. It employs cryptographic functions for encryption and decryption, including AES encryption for message security. Additionally, it facilitates communication with other nodes in the network by sending messages to specified destinations or servers. Overall, OnionRouterService provides essential functionalities for the operation of an onion router within a network architecture.
 
-#### Symmetric Key Creation Handleing
+#### Symmetric Key Creation Handling
+The `OnionRouterService` class facilitates symmetric key creation as part of the handling of Create cells. Here's a high-level overview of the process:
+
+1. **Receiving Create Cell**: 
+   - Upon receiving a Create cell, the `doCreate()` method is invoked.
+   - This method extracts the exchanged Diffie-Hellman parameters (gX) from the Create cell.
+
+2. **Shared Secret Generation**:
+   - The received gX parameter is used along with the OR's private key to perform a Diffie-Hellman key exchange.
+   - This generates a shared secret between the OR and the originating client.
+
+3. **Key Derivation**:
+   - The shared secret is then used to derive a symmetric key (K) for encrypting subsequent communication between the OR and the client.
+
+4. **Hashing and Storage**:
+   - The derived symmetric key is hashed along with a predefined string ("handshake") using SHA3-256 hashing algorithm.
+   - The resulting hash (K') is stored alongside the circuit ID in the OR's key table for future use in encrypting and decrypting messages.
+
+5. **Response Generation**:
+   - A Created cell containing the OR's public Diffie-Hellman parameter (gY) and the hash of the symmetric key (K') is constructed and sent back to the client.
+
+6. **Encryption and Transmission**:
+   - The Created cell is encrypted and transmitted back to the client, allowing the client to verify the key agreement and proceed with secure communication.
+
+This process ensures secure symmetric key establishment between the OR and the client, enabling subsequent encrypted communication within the Onion Routing network.
 
 #### Relay Handling
+
+The `OnionRouterService` class manages Relay messaging, which involves relaying encrypted messages between nodes in the Onion Routing network. Here's an outline of the process:
+
+1. **Receiving Relay Cell**: 
+   - Upon receiving a Relay cell, the `doRelay()` method is invoked.
+   - This method examines whether the Relay cell is incoming from the previous node or outgoing to the next node in the circuit.
+
+2. **Incoming Relay Cell**:
+   - If the Relay cell is incoming from the previous node, the method decrypts the Relay secret contained within the cell.
+   - It then updates the initialization vector (IV) table with the IV received, decrypts the Relay secret to obtain the destination IP/port and child cell, and forwards the child cell to its destination.
+
+3. **Outgoing Relay Cell**:
+   - If the Relay cell is outgoing to the next node, the method packages the cell into a new Relay cell and forwards it to the next node.
+   - It retrieves the address and port of the previous node from the "inTable" and sends the encapsulated Relay cell to this address/port.
+
+4. **Data Relay**:
+   - In the case of a Data cell within the Relay, the method either forwards it to the destination server or sends it to the next OR in the circuit based on the cell type.
+
+5. **Error Handling**:
+   - If the Relay cell's type is unknown or malformed, appropriate error messages are logged, and the connection is closed.
+
+This process ensures the secure relay of messages within the Onion Routing network, allowing for anonymous and secure communication between nodes.
+
 
 #### Data Handling
 `Onion Peeling Messages (Request)`
@@ -134,9 +186,48 @@ The OnionRouterService class serves as a handler for messages directed to an oni
  - To handle, the message is directed to the server outside of the OR.
  - Unfortunately, as Onion Routing paper left what we consider to be a security flaw in place. The exit onion router is able to see the plain-text information of what is contained inside a `DATA` message. This is not something we address in our service. Though we have have planned to encrypt the data child (plain-text to be sent to server) as a data secret much like we do for Relay messages. Though this time using the servers public key which is defined on startup. 
 
+The `OnionRouterService` class manages Data messaging, which involves relaying encrypted data between nodes in the Onion Routing network. Here's an outline of the process:
+
+1. **Receiving Data Cell**: 
+   - Upon receiving a Data cell, the `doRelay()` method is invoked.
+   - This method checks if the Data cell is incoming from the previous node or outgoing to the next node in the circuit.
+
+2. **Incoming Data Cell**:
+   - If the Data cell is incoming from the previous node, the method decrypts the Data cell and extracts the child cell containing the actual data.
+   - It then forwards the child cell to its destination server.
+
+3. **Outgoing Data Cell**:
+   - If the Data cell is outgoing to the next node, the method packages the cell into a new Relay cell and forwards it to the next node.
+   - It retrieves the address and port of the previous node from the "inTable" and sends the encapsulated Relay cell to this address/port.
+
+4. **Error Handling**:
+   - If the Data cell's type is unknown or malformed, appropriate error messages are logged, and the connection is closed.
+
+This process ensures the secure relay of data within the Onion Routing network, allowing for anonymous and secure communication between nodes.
+
+
 #### Destroy Handling
 
-## Cells (Messages)
+The `OnionRouterService` class manages Destroy handling, which involves breaking down connections and relaying Destroy cells to other nodes in the Onion Routing network. Here's an outline of the process:
+
+1. **Receiving Destroy Cell**: 
+   - Upon receiving a Destroy cell, the `doDestroy()` method is invoked.
+   - This method identifies the circuit ID associated with the Destroy cell and proceeds to break down connections related to this circuit.
+
+2. **Breaking Down Connections**:
+   - The method searches for outgoing circuit IDs in the "Ask table" associated with the received circuit ID.
+   - For each outgoing circuit ID found, it removes corresponding entries from various tables (key table, IV table, ask table, in table, and out table) to break down connections.
+
+3. **Relaying Destroy Cell**:
+   - For each outgoing circuit ID, the method constructs a new Destroy cell and sends it forward to the next node in the circuit.
+   - It retrieves the address and port of the next node from the "out table" and sends the Destroy cell to this address/port.
+
+4. **Error Handling**:
+   - If the Destroy cell's circuit ID is not found or there are errors in relaying the Destroy cell, appropriate error messages are logged.
+
+This process ensures the orderly teardown of connections associated with a circuit and the propagation of Destroy cells to other nodes, maintaining network integrity within the Onion Routing network.
+
+## Cells (Onion Router Layer Messages)
 ---
 
 1. Create
@@ -307,6 +398,8 @@ Then, run `ant` to build the `mackyack_client`, `mackyack_server`, and `onionrou
 ## Initiation
 --- 
 Before initiation, all configs in [config](./configs/) should be base implemented.
+Reference the Configs section 
+
 All commands should be ran in the root directory of the project
 
 1. Build & Run the `Onion Routers`
