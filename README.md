@@ -35,3 +35,5 @@ Properties:
 5. ServerPollResponse
 6. MessageSend
 7. MessageReceive
+8. NodeConnect
+9. NodeConnectResponse
