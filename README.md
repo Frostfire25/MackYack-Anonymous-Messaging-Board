@@ -35,7 +35,6 @@ Client is allowed to receive messages on the board and update new messages on th
 </p>
 
 #### Client Functionality
----
 - Message is sent to the server, where it is added to the MackYack board.
 - Requests to the server are made periodically (every 3 seconds) to update the client's local view of the MackYack board.
 - Anonymity is maintained by sending requests through an Onion Routing overlay network
