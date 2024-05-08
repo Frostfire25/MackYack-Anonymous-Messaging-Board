@@ -3,22 +3,22 @@
         {
             "addr": "127.0.0.1",
             "port": 5002,
-            "pubKey": ""
+            "pubKey": "MIHYMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykA0MAAkB6r4tkZsNffCIKdYfA/wtTNcA5D4O0NeQ3J6kt8bX4l8O0CXvfjCRAMYov0lP/xt1MkpJi8U5BUDDl/CEFV4Zq"
         },
         {
             "addr": "127.0.0.1",
             "port": 5003,
-            "pubKey": ""
+            "pubKey": "MIHZMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykA0QAAkEAlWzE7ww2epHMHYJDXb/eRPeTxsIck9VIY2hQdv9sIBvG7jc7hkCPso2T12UCYTlmIRf6BSEYaQ1m2mUOugfsnQ=="
         },
         {
             "addr": "127.0.0.1",
             "port": 5004,
-            "pubKey": ""
+            "pubKey": "MIHZMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykA0QAAkEAnBC+Gn/qp9c1xj/ZlgQimbEfxmqT6+0VmEW45hZs3/eFRVBLoEPzSDmsWFa3oepdu9GjcSRYbSLp3AlfDqOXSA=="
         },
         {
             "addr": "127.0.0.1",
             "port": 5005,
-            "pubKey": ""
+            "pubKey": "MIHZMIGQBgYrDgcCAQEwgYUCQQD8poLOjhLKuibvzPcRDlJtsHiwXt7LzR60ogjzrhYXrgHzW5Gkfm32NBPF4S7QiZvNEyrNUNmRUb3EPuc3WS4XAkBnhHGyepz0TukaScUUfbGpqvJE8FpDTWSGkx0tFCcbnjUDC3H9c9oXkGmzLik1Yw4cIGI1TQ2iCmxBblC+eUykA0QAAkEA+aWTacMCH+xhV0m0SOFb4XSv69xTuj3kr2H7S9IaxsJjSXQu26GnA89kRjKyyrcUFKeY1LRha+hdaFjaHCUErA=="
         }
     ]
 }

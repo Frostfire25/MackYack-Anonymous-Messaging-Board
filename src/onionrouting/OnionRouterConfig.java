@@ -17,6 +17,7 @@ public class OnionRouterConfig implements JSONSerializable {
     private String privateKey;
     private String addr;
     private int port;
+    private boolean verbose;
 
     public OnionRouterConfig(String path) throws FileNotFoundException, InvalidObjectException {
         // Construct file
@@ -63,6 +64,12 @@ public class OnionRouterConfig implements JSONSerializable {
         } else {
             throw new InvalidObjectException("Expected a Config object -- port expected.");
         }
+
+        if (obj.containsKey("verbose")) {
+            this.verbose = obj.getBoolean("verbose");
+        } else {
+            throw new InvalidObjectException("Expected a Config object -- verbose expected.");
+        }
     }
 
     @Override
@@ -71,6 +78,7 @@ public class OnionRouterConfig implements JSONSerializable {
         obj.put("privKey", this.privateKey);
         obj.put("addr", this.addr);
         obj.put("port", this.port);
+        obj.put("verbose", verbose);
         return obj; // We are never reading this file to JSON.
     }
 
@@ -89,6 +97,10 @@ public class OnionRouterConfig implements JSONSerializable {
 
     public int getPort() {
         return port;
+    }
+
+    public boolean isVerbose() {
+        return verbose;
     }
 
     /**

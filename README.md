@@ -84,7 +84,8 @@ Example:
 {
     addr: "127.0.0.1",
     port: 5000,
-    privKey: "<private-key>"
+    privKey: "<private-key>",
+    verbose: "false"
 }
 ```
 

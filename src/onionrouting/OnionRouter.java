@@ -35,6 +35,7 @@ public class OnionRouter
     // Basic fields:
     public static boolean doHelp = false;               // True if help option present.
     private static OnionRouterConfig conf = null;       // The configuration information.
+
     private static String configFile = "";   // Default configuration file.
     
     // OR-specific fields:
@@ -309,5 +310,12 @@ public class OnionRouter
      */
     public static int getPort() {
         return conf.getPort();
+    }
+
+    /**
+     * @return OnionRoutingConfig associated with this Onion Router.
+     */
+    public static OnionRouterConfig getConf() {
+        return conf;
     }
 }

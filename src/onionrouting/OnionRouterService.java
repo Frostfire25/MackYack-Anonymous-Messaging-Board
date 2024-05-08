@@ -74,9 +74,13 @@ public class OnionRouterService implements Runnable {
                 return;
             }
 
-            inSock.close();
-
             String type = obj.getString("type");
+
+            if(OnionRouter.getConf().isVerbose()) {
+                System.out.println("["+type+" Cell Received] with host: " + inSock.getInetAddress().getHostAddress() +":"+inSock.getPort());
+            }
+
+            inSock.close();
 
             try {
                 switch (type) {
@@ -535,6 +539,10 @@ public class OnionRouterService implements Runnable {
             output.write(msg);
             output.newLine();
             output.close();
+
+            if(OnionRouter.getConf().isVerbose()) {
+                System.out.println("[Sent to Server] to host: " + addr +":"+port);
+            }
             
             // Close the socket when done
             socket.close();
@@ -562,6 +570,10 @@ public class OnionRouterService implements Runnable {
             output.write(msg);
             output.newLine();
             output.flush();
+
+            if(OnionRouter.getConf().isVerbose()) {
+                System.out.println("[Cell Sent] to host: " + addr +":"+port);
+            }
 
             // Wait for the response
             String res = input.readLine();
