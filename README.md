@@ -306,6 +306,7 @@ Then, run `ant` to build the `mackyack_client`, `mackyack_server`, and `onionrou
 
 ## Initiation
 --- 
+Before initiation, all configs in [config](./configs/) should be base implemented.
 All commands should be ran in the root directory of the project
 
 1. Build & Run the `Onion Routers`
@@ -321,4 +322,6 @@ All commands should be ran in the root directory of the project
    - On initiation you will receive a public key, update the `client-config.json` file accordingly.
   
 3. Build & Run the `Application Client and Onion Proxy`
-    - 
+    - Run the following command to start the Application Client and Onion Proxy
+    - `java -jar .\dist\mackyack_client.jar --config .\configs\client-config.json`
+    - Issue commands into the REPL loop for results and information.
