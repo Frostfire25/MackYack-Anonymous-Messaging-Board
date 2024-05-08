@@ -124,8 +124,6 @@ public class OnionRouter
     {
         try
         { 
-            configFile = "./configs/router-3.json";
-
             if(configFile == null || configFile.isEmpty()) {
                 throw new FileNotFoundException("File config can not be empty for Onion Router. Please choose a specific router.");
             }
@@ -224,8 +222,6 @@ public class OnionRouter
 
         while(true) {
             Socket sock = server.accept();
-
-            System.out.println("OR Connection received with addr ["+sock.getInetAddress().getHostAddress()+":"+sock.getPort()+"]" );
 
             Thread ORServiceThread = new Thread(new OnionRouterService(sock));
             ORServiceThread.start();

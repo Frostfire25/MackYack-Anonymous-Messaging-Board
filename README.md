@@ -17,55 +17,31 @@
 - Anonymity is maintained by sending requests through an Onion Routing overlay network
     - Onion Routing overlay network is accessed via. an Onion Proxy. More details in "Onion Routing Protocol" section.
 
-### OnionProxy (Client)
-The `OnionProxy` class serves as a Proxy within an Onion Routing Network, facilitating communication between a client and an Entrance Onion Router. It manages the establishment of secure communication channels between nodes, message relay, and message reception.
-
-#### Methods
-
-
-### `public OnionProxy(RoutersConfig routersConfig, ClientConfig conf) throws Exception`
-This constructor initializes the Onion Routing System. It requires configurations for routers and clients. Upon instantiation, it constructs the circuit, generates create cells for each OR, sends create cells to initiate circuit keys, and starts polling for new messages on the proxy.
-
-### `public void send(String message) `
-This method sends a string message to the entrance Onion Router. It establishes a socket connection and transmits the message.
-
-### `private void pollProxy()`
-Initiates the polling mechanism for new messages on the proxy.
-
-### `private void handJSONObject(JSONObject obj)`
-Handles a received JSON object, determining whether it should be handled at the Proxy Layer or at the ApplicationService Layer.
-
-### `private Router findRouterWithCircId(int id)`
-Finds the router associated with the specified circuit ID.
-
-### `private void handleRelay(RelayCell relayCell) `
-Handles a relay cell received from an Onion Router. Decrypts the relay secret and handles the associated JSON serializable cell.
-
-### `private void handleCreated(CreatedCell createdCell) `
-Handles a created cell received from an Onion Router. Generates the first half of the DH Key Exchange and updates router information with the symmetric key.
-
-### `public JSONSerializable constructOperation(JSONSerializable message, String server_addr, int port) `
-Constructs a message to be sent, wrapping it in relays from the last router in the circuit to the entry node.
-
-### `private void sendCreateCells(List<CreateCell> createCells) `
-Sends create cells to each router in the circuit, encrypting and wrapping them in relays as necessary.
-
-### `private List<CreateCell> constructCreateCells() `
-Constructs create cells for each router in the circuit, generating the first half of the DH Key Exchange and encrypting symmetric keys.
-
-### `private void constructCircuit() `
-Constructs the circuit from the provided router configuration, selecting a specified number of routers as Onion Routers.
-
-
-### Server Functionality
+## Application Layer
 ---
-- Message is received by some unknown client, and its message is appended to the board along with a timestamp (the time it was received).
-- Upon receiving a request for the board from a client, a snapshot of the board is sent back to the requesting client.
+MackYack is designed to be an anonymous messaging board system. We have created a Client Server model for handling operations on the board.
+Client is allowed to receive messages on the board and update new messages on the board. While, the server is allowed to respond with the current state of the board and update the board when a new message is received.
 
-### Messages 
----
+<p style="align: center;">
 
-1. Put
+ ![Application workflow](./images/application-workflow.png) 
+
+</p>
+
+There exists three commands in our Client-side application.
+ - `GET` - Constructs and sends a GetRequest
+ - `PUT` - Prompts the interface for a message, and sends to server
+ - `EXIT` - Closes the application and destroys the circuit.
+
+<p style="align: center;">
+
+ ![Messages i.e.](./images/messages.png) 
+
+</p>
+
+#### Application Layer Messages
+There exists four types of Application layer messages that can be sent
+1. PutRequest
 ```
 Client -> Server
 Sent from Client through the circuit to the Server containing a message. This message will be appended to the board.
@@ -109,20 +85,57 @@ Properties:
     - String - timestamp
 ```
 
-## Onion Routing Protocol
 
-### Onion Proxy Functionality
+## OnionProxy
 ---
-- Used by MackYack clients to access the Onion Routing overlay network.
-    - The Onion Proxy (OP) is run on the client's local computer when the MackYack application starts.
-- Constructs the circuit (i.e. sends create + extend cells) by choosing from the Client's list of known routers (located in routers.json).
-- Ability to deconstruct the circuit by sending a destroy cell and its associated circID to the entry Onion Router (OR).
-- Encrypts MackYack messages in "layers" (like an onion! Get it?).
-    - Encryption is done by encrypting the message with the key established with each OR in the circuit starting with the farthest node and ending with the closest.
-- Decrypts MackYack responses by peeling back "layers".
-    - Decryption is done by decrypting the message with the key establish with each OR in the circuit starting with the closest node and ending with the farthest.
+The `OnionProxy` (OP) class serves as a Proxy within an Onion Routing Network, facilitating communication between a client and an Entrance Onion Router. It manages the establishment of secure communication channels between nodes, message relay, and message reception. The Onion Proxy is abstracted out from the client such that it can be ran as a unique layer between any Application layer that utilizes MerrimackUtil JSON Messaging and connects to our devised Onion Network.
+The Onion Proxy (OP) is utilized by MackYack clients for accessing the Onion Routing overlay network, running on the client's local computer upon the MackYack application's launch.
+ - It constructs the circuit, selecting from the client's list of known routers (located in routers.json), and has the ability to deconstruct the circuit by sending a destroy cell and its associated circID to the entry Onion Router (OR).
+ - The OP encrypts MackYack messages to send to the entrance onion router in "layers," akin to an onion, encrypting the message with the key established with each OR in the circuit from the farthest node to the closest.
+ - Subsequently, whenever a message is received from the entrance onion router, it decrypts MackYack responses by peeling back "layers," decrypting the message with the key established with each OR in the circuit from the closest node to the farthest.
+ - Additionally, the OP handles various tasks such as:
+   - Determining whether a received JSON object should be processed at the Proxy Layer or the ApplicationService Layer.
+   - Finding the router associated with a specified circuit ID.
+   - Managing relay cells received from an Onion Router.
+   - Constructing messages to be sent.
+   - Sending create cells to each router in the circuit.
+   - Generating create cells for each router.
+   - Building the circuit from the provided router configuration.
 
-### Cells (Messages)
+#### Public API
+### `public OnionProxy(RoutersConfig routersConfig, ClientConfig conf) throws Exception`
+This constructor initializes the Onion Routing System. It requires configurations for routers and clients. Upon instantiation, it constructs the circuit, generates create cells for each OR, sends create cells to initiate circuit keys, and starts polling for new messages on the proxy.
+
+### `public void send(String message) `
+This method sends a string message to the entrance Onion Router. It establishes a socket connection and transmits the message.
+
+### `public void pollProxy()`
+Initiates the polling mechanism for new messages on the proxy.
+
+
+## Onion Routing Protocol
+---
+
+`TODO:`
+
+### Onion Routing Service
+ 
+The OnionRouterService class serves as a handler for messages directed to an onion router, onion proxy, or web server; managing various tables and cryptographic operations. It operates within a threaded service model, handling incoming messages via the run() method. Upon receiving different types of cells, such as Relay, Create, Created, and Destroy, it executes corresponding actions like relaying messages, creating connections, updating & computing creation keys, or managing destructions. It employs cryptographic functions for encryption and decryption, including AES encryption for message security. Additionally, it facilitates communication with other nodes in the network by sending messages to specified destinations or servers. Overall, OnionRouterService provides essential functionalities for the operation of an onion router within a network architecture.
+
+#### Symmetric Key Creation Handleing
+
+#### Relay Handling
+
+#### Data Handling
+`Onion Peeling Messages (Request)`
+ - When a message is being sent from the `Client` → `Server` it can be defined as a Onion Peeling Message in our application. This is because the onion is being peeled. The last message in the onion should be a Data message. 
+ - Data Messages are destined for some server outside of the onion network (OR). 
+ - To handle, the message is directed to the server outside of the OR.
+ - Unfortunately, as Onion Routing paper left what we consider to be a security flaw in place. The exit onion router is able to see the plain-text information of what is contained inside a `DATA` message. This is not something we address in our service. Though we have have planned to encrypt the data child (plain-text to be sent to server) as a data secret much like we do for Relay messages. Though this time using the servers public key which is defined on startup. 
+
+#### Destroy Handling
+
+## Cells (Messages)
 ---
 
 1. Create

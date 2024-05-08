@@ -41,7 +41,6 @@ public class ServerService {
 
         while(true) {
             Socket sock = server.accept();
-            System.out.println("Connection established");
             BufferedReader input = new BufferedReader(new InputStreamReader(sock.getInputStream()));
             BufferedWriter output = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
 

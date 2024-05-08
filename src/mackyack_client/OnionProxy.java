@@ -20,7 +20,6 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -43,6 +42,7 @@ import merrimackutil.util.Pair;
 import onionrouting.onionrouter_cells.CreateCell;
 import onionrouting.onionrouter_cells.CreatedCell;
 import onionrouting.onionrouter_cells.DataCell;
+import onionrouting.onionrouter_cells.DestroyCell;
 import onionrouting.onionrouter_cells.RelayCell;
 import onionrouting.onionrouter_cells.RelaySecret;
 
@@ -78,30 +78,14 @@ public class OnionProxy {
         this.generator = KeyPairGenerator.getInstance("EC"); // Generator for elliptic curves (this is our group)    
         this.generator.initialize(256);
 
-        // Poll for new messages on the proxy
-        //pollProxy(true);
-
         // build the circuit
         constructCircuit();
 
         // Construct create cells for each OR
         List<CreateCell> createCells = constructCreateCells();
 
-        // Debug Message
-        System.out.println(Arrays.toString(circuit.toArray()));
-
-
         // Construct a list of messages (Relays) to initiate the circuit keys
         sendCreateCells(createCells);
-
-
-        //for(JSONSerializable n : create_and_relay_messages) {
-        //    System.out.println(n.toJSONType().getFormattedJSON());
-        //}
-
-        //for(Router n : circuit) {
-        //    System.out.println(n.getB64_IV() != null && n.getSymmetricKey() != null);
-        //}
 
         // Poll proxy async
         pollProxy(true);
@@ -131,7 +115,23 @@ public class OnionProxy {
         sock.close();
     }
 
-    private void pollProxy(boolean async) {
+    /**
+     * Removes circuit from the Onion Router network
+     * @throws IOException 
+     * @throws UnknownHostException 
+     */
+    public void destroy() throws UnknownHostException, IOException {
+        // Construct a new DestroyCell from associating ORentry's circuitID
+        String entryRouterCircId = getEntryRouter().getCircuitId();
+        DestroyCell destroyCell = new DestroyCell(entryRouterCircId);
+        send(destroyCell.serialize());
+    }
+
+    /**
+    * Waits for a new message and handles at the Onion Proxy layer
+    * @param async poll either on a thread asynchronous or on the main thread
+    */
+    public void pollProxy(boolean async) {
         if(async) {
             Thread thread = new Thread(() -> {
                 while(true) {
@@ -335,8 +335,6 @@ public class OnionProxy {
 
             // Get the create cell destined for this router (NOT ENCRYPTED)
             JSONSerializable message = createCells.get(i);
-            System.out.println("Create message:");
-            System.out.println(message.toJSONType().getFormattedJSON());
             Router lastRouter = circuit.get(i);
 
             // If there needs to be a relay
@@ -363,7 +361,6 @@ public class OnionProxy {
                 }
             }
 
-            System.out.println(message.toJSONType().getFormattedJSON());
             send(message.serialize());
             pollProxy(false);
         }
@@ -430,5 +427,12 @@ public class OnionProxy {
         
         for(int i = 0; i < ROUTER_COUNT; i++)
             circuit.add(copy.get(i));
+    }
+
+    /**
+     * @return list of all the routers in this circuit
+     */
+    public List<Router> getCircuit() {
+        return this.circuit;
     }
 }
