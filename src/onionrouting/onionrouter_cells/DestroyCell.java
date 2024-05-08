@@ -2,18 +2,25 @@ package onionrouting.onionrouter_cells;
 
 import java.io.InvalidObjectException;
 
-import merrimackutil.json.JSONSerializable;
 import merrimackutil.json.types.JSONObject;
 import merrimackutil.json.types.JSONType;
 
 /**
- * Client -> First OR
+ * Client -> First OR && ORen -> ORk
  * Sent from Client to the first onion router to break down the established
  * circuit (recursively).
  */
 public class DestroyCell extends Cell {
 
     private final String type = "DESTROY";
+
+    /**
+     * Default constructor
+     * @param circId
+     */
+    public DestroyCell(String circId) {
+        this.circID = circId;
+    }
 
     /**
      * Construct a Destroy cell from the corresponding JSON object.
@@ -76,7 +83,12 @@ public class DestroyCell extends Cell {
         return obj;
     }
 
+    /**
+     * Accessors
+     */
+
     public String getType() {
         return type;
     }
+
 }

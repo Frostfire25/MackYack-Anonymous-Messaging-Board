@@ -22,6 +22,7 @@ public class ClientConfig implements JSONSerializable {
     private int serverPort;
     private String serverPubKey;
     private String routersPath;
+    private boolean verbose;
 
     public ClientConfig(String path) throws FileNotFoundException, InvalidObjectException {
         this.path = path;
@@ -88,6 +89,13 @@ public class ClientConfig implements JSONSerializable {
         } else {
             throw new InvalidObjectException("Expected a Config object -- routersPath expected.");
         }
+
+        if (obj.containsKey("verbose")) {
+            this.verbose = obj.getBoolean("verbose");
+        } else {
+            throw new InvalidObjectException("Expected a Config object -- routersPath expected.");
+        }
+        
     }
 
     @Override
@@ -99,6 +107,7 @@ public class ClientConfig implements JSONSerializable {
         obj.put("serverPort", this.serverPort);
         obj.put("serverPubKey", this.serverPubKey);
         obj.put("routersPath", this.routersPath);
+        obj.put("verbose", verbose);
         return obj; // We are never reading this file to JSON.
     }
 
@@ -128,6 +137,10 @@ public class ClientConfig implements JSONSerializable {
 
     public String getRoutersPath() {
         return routersPath;
+    }
+
+    public boolean isVerbose() {
+        return verbose;
     }
     
 }

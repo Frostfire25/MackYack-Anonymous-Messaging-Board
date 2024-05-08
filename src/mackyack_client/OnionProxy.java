@@ -20,7 +20,6 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -43,6 +42,7 @@ import merrimackutil.util.Pair;
 import onionrouting.onionrouter_cells.CreateCell;
 import onionrouting.onionrouter_cells.CreatedCell;
 import onionrouting.onionrouter_cells.DataCell;
+import onionrouting.onionrouter_cells.DestroyCell;
 import onionrouting.onionrouter_cells.RelayCell;
 import onionrouting.onionrouter_cells.RelaySecret;
 
@@ -115,7 +115,23 @@ public class OnionProxy {
         sock.close();
     }
 
-    private void pollProxy(boolean async) {
+    /**
+     * Removes circuit from the Onion Router network
+     * @throws IOException 
+     * @throws UnknownHostException 
+     */
+    public void destroy() throws UnknownHostException, IOException {
+        // Construct a new DestroyCell from associating ORentry's circuitID
+        String entryRouterCircId = getEntryRouter().getCircuitId();
+        DestroyCell destroyCell = new DestroyCell(entryRouterCircId);
+        send(destroyCell.serialize());
+    }
+
+    /**
+    * Waits for a new message and handles at the Onion Proxy layer
+    * @param async poll either on a thread asynchronous or on the main thread
+    */
+    public void pollProxy(boolean async) {
         if(async) {
             Thread thread = new Thread(() -> {
                 while(true) {
@@ -411,5 +427,12 @@ public class OnionProxy {
         
         for(int i = 0; i < ROUTER_COUNT; i++)
             circuit.add(copy.get(i));
+    }
+
+    /**
+     * @return list of all the routers in this circuit
+     */
+    public List<Router> getCircuit() {
+        return this.circuit;
     }
 }

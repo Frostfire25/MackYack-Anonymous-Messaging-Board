@@ -6,6 +6,7 @@ import java.net.UnknownHostException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Scanner;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -28,6 +29,13 @@ public class ApplicationService {
     public ApplicationService(OnionProxy proxy, ClientConfig conf) throws UnknownHostException, IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException {
         this.proxy = proxy;
         this.conf = conf;
+
+        // Print out if we want a verbose message
+        if(conf.isVerbose()) {
+            System.out.println("Circuit: ");
+            System.out.println("\tConstructed circuit with circuit id - OR pairs.");
+            System.out.println(Arrays.toString(proxy.getCircuit().toArray()));
+        }
 
         handleInput();
     }
@@ -113,7 +121,10 @@ public class ApplicationService {
                     PutRequest req = new PutRequest(putMsg);
                     sendMessage(req);
                 }; break;
-                case "EXIT": {System.exit(1);} return;
+                case "EXIT": {
+                    proxy.destroy(); // break down the OR circuit.
+                    System.exit(1);
+                } return;
             }
         }
     }

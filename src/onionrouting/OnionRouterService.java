@@ -12,6 +12,11 @@ import java.io.InvalidObjectException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.Base64;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentHashMap.KeySetView;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -320,7 +325,42 @@ public class OnionRouterService implements Runnable {
          * themselves as args to this method.
          */
 
-         
+         if(cell.getCircID() == null) {
+            System.err.print("Could not find this.circID from the in Destroy cell.");
+            return;
+        }
+
+        Set<String> outCircIdsToRemove = new HashSet<>();
+
+        //
+        // Value search of the Ask table
+        //     For each of the KVP find the Key in the out table and then send a new destroy cell to the out OR
+        for(Map.Entry<String,String> entry : OnionRouter.getAskTable().entrySet()) {
+        String outId = entry.getKey();
+        String inId = entry.getValue();
+
+            // We know that this outId associaton has 
+            if(inId.equalsIgnoreCase(cell.getCircID())) {
+                // Append the outId to outCircIdsToRemove so it can get removed from this OR
+                outCircIdsToRemove.add(outId);
+                
+                // Get the address and port using the circID
+                String[] segments = OnionRouter.getOutTable().get(outId).split(":");
+                String destroyCellAddr = segments[0];
+                int destroyCellPort = Integer.parseInt(segments[1]);
+
+                // Send the destroy cell to the next OR
+                DestroyCell destroyCell = new DestroyCell(outId);
+                sendToDestination(destroyCell.serialize(), destroyCellAddr, destroyCellPort);
+            }
+        }
+
+        // Remove all fields keyTable, ivTable, askTable, inTable, outTable;
+        OnionRouter.getKeyTable().remove(cell.getCircID());
+        OnionRouter.getIVTable().remove(cell.getCircID());
+        OnionRouter.getAskTable().remove(cell.getCircID());
+        OnionRouter.getInTable().remove(cell.getCircID());
+        outCircIdsToRemove.forEach(n -> OnionRouter.getOutTable().remove(n));
     }
 
     /*
