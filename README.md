@@ -50,7 +50,7 @@ Properties:
     - String - data
 ```
 
-1. PutResponse
+2. Put Response
 ```
 Server -> Client
 Response sent to client to assure that their message has been added to the board.
@@ -58,7 +58,7 @@ Response sent to client to assure that their message has been added to the board
 Properties: (none)
 ```
 
-2. GetRequest
+3. Get Request
 ```
 Client -> Server
 Sent from the Client through the circuit to the Server asking to receive information regarding the board at the current instant.
@@ -66,16 +66,23 @@ Sent from the Client through the circuit to the Server asking to receive informa
 Properties: (none)
 ```
 
-3. GetResponse
+4. Get Response
 ```
 Server -> Client
 Sent from the Server through the circuit to the Client responding with all of the Messages on the Board.
 
 Properties:
     - List<Message> - messages
-        - Where a message is constructed as
-            - String - data
-            - String - timestamp
+```
+
+5. Message
+```
+Contained within Get Response object.
+Sent as a series of Messages through the Get Response object to show which messages were present on the board at the time of the request.
+
+Properties:
+    - String - data
+    - String - timestamp
 ```
 
 
@@ -133,21 +140,25 @@ The OnionRouterService class serves as a handler for messages directed to an oni
 
 1. Create
 ```
-Client -> First OR
-Sent from Client to the first onion router to create a circuit.
+Client -> First OR / OR -> New OR to add
+Sent from Client to the first onion router to create a circuit. Also sent from OR to the new OR to be added to extend a circuit.
 
 Properties:
+    - final String - type; "CREATE"
     - int - circID
     - String - gX; Base 64-encoded first half of Diffie-Hellman KEX encrypted in the ephemeral key (see next property).
     - String - encryptedSymKey; Ephemeral key (symmetric) encrypted using the OR's public key.
+    - String - srcAddr
+    - int - srcPort
 ```
 
 2. Created
 ```
-First OR -> Client
-Sent from the first onion router to the client confirming the creation of a circuit.
+Newly-added OR -> Client
+Sent from the newly-added onion router to the client confirming the creation/extension of a circuit.
 
 Properties:
+    - final String - type; "CREATED"
     - String - gY; Base 64-encoded second half of Diffie-Hellman KEX.
     - String - kHash; Base 64-encoded SHA-3 256 hash: H(K || "handshake")
 ```
@@ -158,54 +169,47 @@ Client -> First OR
 Sent from Client to the first onion router to break down the established circuit (recursively).
 
 Properties:
+    - final String - type; "DESTROY"
     - int - circID
 ```
 
-4. Extend
-```
-Client -> Last OR in Circuit
-Sent from Client to the first OR in the circuit but forwarded to the last OR in the circuit to extend the circuit by another node.
-
-Properties:
-    - int - circID
-    - String - addr; Address of the OR to add to the circuit
-    - int - port; Port of the OR to add to the circuit
-    - String - gX; Base 64-encoded first half of Diffie-Hellman KEX encrypted in the ephemeral key (see next property).
-    - String - encryptedSymKey; Ephemeral key (symmetric) encrypted using the OR's public key.
-```
-
-5. Extended
-```
-New OR's predecessor -> Client
-Sent from the newly-created OR's predecessor to the Client acknowledging the extension and sending the second half of the DH KEX.
-
-Properties:
-    - String - gY; Base 64-encoded second half of Diffie-Hellman KEX.
-    - String - kHash; Base 64-encoded SHA-3 256 hash: H(K || "handshake")
-```
-
-6. Data
+4. Data
 ```
 Client -> Last OR in Circuit -> Server
 Sent from the client to the last OR in the circuit (which is then passed to the server). Contains the data
 that will be sent out to the server.
 
 Properties:
-    - String - addr; Address of the OR to add to the circuit
-    - int - port; Port of the OR to add to the circuit
-    - String - data; Data to be sent over to the server (JSON marshalled; encrypted in Server's public key)
+    - final String - type; "DATA"
+    - String - serverAddr; Address of the server to connect + send data to
+    - int - serverPort; Port of the server to connect + send data to
+    - JSONObject - child; Data to be sent over to the server (JSON marshalled; encrypted in Server's public key)
 ```
 
-7. Relay
+5. Relay
 ```
 Client -> OR; OR -> OR
-Sent client/OR to an OR in the circuit. Its function is for the receiving OR to relay the data to the
-next OR in the chain without interpreting the data.
+Sent by the client or an OR to the next OR in the circuit. Its function is for the receiving OR to relay the
+data to the next OR in the chain without interpreting the data.
 
 Properties:
+    - final String - type; "RELAY"
     - int - circID
-    - String - relayData; Data that is being relayed. Encrypted in onion layers to be peeled one-at-a-time
-                          at the destination OR w/ the symmetric key identified by the circID
+    - String - relaySecret; Data that is being relayed. Encrypted in onion layers to be peeled one-at-a-time
+                            at the destination OR w/ the symmetric key identified by the circID
+    - String - base64_IV; IV that was used to encrypt the secret.
+```
+
+5a. RelaySecret
+```
+Contained within Relay cell.
+Contains the secret to be decrypted + relayed to the next OR.
+
+Properties:
+    - final String - type; "RELAYSECRET"
+    - String - addr
+    - int - port
+    - JSONObject - child; The actual data (the rest is header information)
 ```
 
 ## Configs
@@ -238,7 +242,8 @@ Example:
 ```
 {
     port: 5010,
-    privKey: "<private-key>"
+    privKey: "<private-key>",
+    messagesPath: "./configs/messages.json"
 }
 ```
 
@@ -248,7 +253,8 @@ Contains configuration information for the client to initialize with.  \
 Example:
 ```
 {
-    "port": 5000,
+    addr: "127.0.0.1",
+    port: 5000,
     serverAddr: "127.0.0.1",
     serverPort: 5010,
     serverPubKey: "<server-pub-key>",
@@ -256,11 +262,32 @@ Example:
 }
 ```
 
+### messages.json
+---
+Contains messages and timestamps stored on the board for the server to reference at startup + write to on each Put request.  \
+Example:
+```
+{
+    messages: [
+        {
+            data: "Hello world.",
+            timestamp: "2024/05/07 00:24:12"
+        },
+        {
+            data: "This is Alice, saying hello from the client!",
+            timestamp: "2024/05/07 00:25:09"
+        }
+    ]
+}
+```
+
 ### router_k.json
+---
 Contains configuration information for the router to initialize with.  \
 Example:
 ```
 {
+    addr: "127.0.0.1",
     port: 5000,
     privKey: "<private-key>"
 }
