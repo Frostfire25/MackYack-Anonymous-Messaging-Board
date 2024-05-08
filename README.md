@@ -101,6 +101,8 @@ The Onion Proxy (OP) is utilized by MackYack clients for accessing the Onion Rou
    - Generating create cells for each router.
    - Building the circuit from the provided router configuration.
 
+In the Tor implementation of Onion Routing there exists a `Authority` whose responsibility it is to distribute Onion Routers' information. Though, we did not choose to implement such an idea. Rather, the Onion Proxy has access to all of the Onion Routers in the overlay network. Then, the Onion Proxy choose k Onion Routers to initiate the circuit. 
+
 #### Public API
 ### `public OnionProxy(RoutersConfig routersConfig, ClientConfig conf) throws Exception`
 This constructor initializes the Onion Routing System. It requires configurations for routers and clients. Upon instantiation, it constructs the circuit, generates create cells for each OR, sends create cells to initiate circuit keys, and starts polling for new messages on the proxy.
