@@ -20,7 +20,9 @@ MackYack is an anonymous messaging board system designed to prioritize user priv
 - **Application Layer Messages**: MackYack supports various application layer messages including PutRequest, PutResponse, GetRequest, and GetResponse, enabling efficient communication between clients and the server.
 - **Configuration**: The system includes configuration files such as routers.json, serverConfig.json, clientConfig.json, and router_k.json for seamless initialization and operation.
 
+## Video Instructions
 
+`TODO, will post link when completed.`
 
 ## Build
 ---
@@ -138,3 +140,10 @@ Example:
 }
 ```
 
+## Todo
+---
+ - Implement public key cryptography for messages between the Exit OR and Web Service.
+ - Adjust Onion Proxy to become a flexible API that accepts JSON in any format and works with Java TCP Sockets.
+ - Implement fault tolerance for Onion Router nodes.
+ - Create an Authority to handle distribution of Onion Routers to a proxy.
+ - Record guided installation and setup video.
